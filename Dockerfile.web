@@ -1,0 +1,24 @@
+FROM node:24-alpine AS build
+
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY packages ./packages
+COPY apps ./apps
+COPY services ./services
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm run build
+
+FROM node:24-alpine
+
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+COPY --from=build /app ./
+
+ARG APP
+ARG PORT=3000
+ENV APP=${APP} PORT=${PORT}
+
+CMD ["sh", "-c", "pnpm --filter \"$APP\" exec vite preview --host 0.0.0.0 --port \"$PORT\""]

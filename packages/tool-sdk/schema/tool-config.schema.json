@@ -1,0 +1,425 @@
+{
+  "$defs": {
+    "ActionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "kind": {
+          "default": "custom",
+          "enum": [
+            "approve",
+            "reject",
+            "edit",
+            "custom"
+          ],
+          "type": "string"
+        },
+        "permission": {
+          "type": "string"
+        },
+        "variant": {
+          "default": "secondary",
+          "enum": [
+            "primary",
+            "danger",
+            "secondary"
+          ],
+          "type": "string"
+        },
+        "confirm": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "approval": {
+          "$ref": "#/$defs/ApprovalPolicy"
+        },
+        "setsStatus": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "permission"
+      ],
+      "title": "ActionSpec",
+      "type": "object"
+    },
+    "ApiSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "baseUrlEnv": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string"
+        },
+        "resourcePath": {
+          "default": "/items",
+          "type": "string"
+        }
+      },
+      "required": [
+        "baseUrlEnv",
+        "baseUrl"
+      ],
+      "title": "ApiSpec",
+      "type": "object"
+    },
+    "ApprovalPolicy": {
+      "additionalProperties": false,
+      "description": "When an action must be routed through the approvals engine.",
+      "properties": {
+        "kind": {
+          "default": "never",
+          "enum": [
+            "never",
+            "always",
+            "threshold",
+            "field_true"
+          ],
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "threshold": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "ApprovalPolicy",
+      "type": "object"
+    },
+    "DetailSection": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "fields"
+      ],
+      "title": "DetailSection",
+      "type": "object"
+    },
+    "DetailViewSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "sections": {
+          "items": {
+            "$ref": "#/$defs/DetailSection"
+          },
+          "type": "array"
+        },
+        "showAuditTrail": {
+          "default": true,
+          "type": "boolean"
+        },
+        "showApprovals": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "sections"
+      ],
+      "title": "DetailViewSpec",
+      "type": "object"
+    },
+    "EntityField": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/FieldType",
+          "default": "string"
+        },
+        "enumValues": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "required": {
+          "default": false,
+          "type": "boolean"
+        },
+        "editable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "helpText": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name",
+        "label"
+      ],
+      "title": "EntityField",
+      "type": "object"
+    },
+    "EntitySpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "pluralLabel": {
+          "type": "string"
+        },
+        "idField": {
+          "default": "id",
+          "type": "string"
+        },
+        "titleField": {
+          "default": "id",
+          "type": "string"
+        },
+        "statusField": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/EntityField"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "pluralLabel",
+        "fields"
+      ],
+      "title": "EntitySpec",
+      "type": "object"
+    },
+    "FieldType": {
+      "enum": [
+        "string",
+        "text",
+        "number",
+        "currency",
+        "boolean",
+        "enum",
+        "datetime",
+        "tags",
+        "json"
+      ],
+      "title": "FieldType",
+      "type": "string"
+    },
+    "FilterSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "kind": {
+          "default": "search",
+          "enum": [
+            "search",
+            "select",
+            "boolean"
+          ],
+          "type": "string"
+        },
+        "options": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "field",
+        "label"
+      ],
+      "title": "FilterSpec",
+      "type": "object"
+    },
+    "ListViewSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "default": "table",
+          "enum": [
+            "queue",
+            "table"
+          ],
+          "type": "string"
+        },
+        "columns": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "filters": {
+          "items": {
+            "$ref": "#/$defs/FilterSpec"
+          },
+          "type": "array"
+        },
+        "defaultSort": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SortSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pageSize": {
+          "default": 25,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "columns"
+      ],
+      "title": "ListViewSpec",
+      "type": "object"
+    },
+    "SortSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "direction": {
+          "default": "desc",
+          "enum": [
+            "asc",
+            "desc"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "field"
+      ],
+      "title": "SortSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A complete declarative description of one internal tool.",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "default": "",
+      "type": "string"
+    },
+    "icon": {
+      "default": "square",
+      "type": "string"
+    },
+    "entity": {
+      "$ref": "#/$defs/EntitySpec"
+    },
+    "listView": {
+      "$ref": "#/$defs/ListViewSpec"
+    },
+    "detailView": {
+      "$ref": "#/$defs/DetailViewSpec"
+    },
+    "actions": {
+      "items": {
+        "$ref": "#/$defs/ActionSpec"
+      },
+      "type": "array"
+    },
+    "api": {
+      "$ref": "#/$defs/ApiSpec"
+    }
+  },
+  "required": [
+    "key",
+    "name",
+    "entity",
+    "listView",
+    "detailView",
+    "api"
+  ],
+  "title": "ToolConfig",
+  "type": "object"
+}

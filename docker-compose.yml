@@ -1,0 +1,133 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: platform
+      POSTGRES_USER: platform
+      POSTGRES_PASSWORD: platform
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U platform -d platform"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    environment:
+      DATABASE_URL: postgresql+psycopg2://platform:platform@postgres:5432/platform
+      PLATFORM_JWT_SECRET: dev-only-not-a-real-secret
+      PLATFORM_JWT_ISSUER: http://localhost:8000
+      CORS_ORIGINS: "*"
+    command: sh -c "cd /app/db && alembic upgrade head && python seed.py"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    environment: &platform-env
+      DATABASE_URL: postgresql+psycopg2://platform:platform@postgres:5432/platform
+      PLATFORM_JWT_SECRET: dev-only-not-a-real-secret
+      PLATFORM_JWT_ISSUER: http://localhost:8000
+      CORS_ORIGINS: "*"
+    command: uvicorn services.auth.app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  kyc:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    environment: *platform-env
+    command: uvicorn services.kyc.app.main:app --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  refunds:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    environment: *platform-env
+    command: uvicorn services.refunds.app.main:app --host 0.0.0.0 --port 8002
+    ports:
+      - "8002:8002"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  flags:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    environment: *platform-env
+    command: uvicorn services.flags.app.main:app --host 0.0.0.0 --port 8003
+    ports:
+      - "8003:8003"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Each frontend is an independent deploy target with its own image/port; the shell only needs remoteEntry URLs.
+  shell:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: platform-web
+    environment:
+      APP: "@platform/shell"
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth
+
+  kyc-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: platform-web
+    environment:
+      APP: "@tools/kyc-web"
+      PORT: "3001"
+    ports:
+      - "3001:3001"
+    depends_on:
+      - kyc
+
+  refunds-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: platform-web
+    environment:
+      APP: "@tools/refunds-web"
+      PORT: "3002"
+    ports:
+      - "3002:3002"
+    depends_on:
+      - refunds
+
+  flags-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: platform-web
+    environment:
+      APP: "@tools/flags-web"
+      PORT: "3003"
+    ports:
+      - "3003:3003"
+    depends_on:
+      - flags

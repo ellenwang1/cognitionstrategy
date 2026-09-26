@@ -1,0 +1,70 @@
+key: kyc
+name: KYC Review Queue
+description: Review applicant KYC cases enriched with sanctions screening from the KYC vendor.
+icon: shield
+entity:
+  name: kyc_case
+  label: KYC Case
+  pluralLabel: KYC Cases
+  idField: id
+  titleField: applicant_name
+  statusField: status
+  fields:
+    - { name: id, label: Case ID }
+    - { name: applicant_name, label: Applicant, required: true }
+    - { name: applicant_email, label: Email }
+    - { name: country, label: Country }
+    - { name: document_type, label: Document, type: enum, enumValues: [passport, drivers_license, national_id] }
+    - { name: status, label: Status, type: enum, enumValues: [pending, in_review, approved, rejected] }
+    - { name: risk_score, label: Risk score, type: number, helpText: "0-100, from the sanctions/KYC vendor" }
+    - { name: risk_flags, label: Risk flags, type: tags }
+    - { name: sanctions_hit, label: Sanctions hit, type: boolean }
+    - { name: reviewer_notes, label: Reviewer notes, type: text, editable: true }
+    - { name: submitted_at, label: Submitted, type: datetime }
+listView:
+  mode: queue
+  columns: [applicant_name, country, document_type, risk_score, sanctions_hit, status, submitted_at]
+  filters:
+    - { field: status, label: Status, kind: select, options: [pending, in_review, approved, rejected] }
+    - { field: country, label: Country, kind: search }
+    - { field: sanctions_hit, label: Sanctions hit, kind: boolean }
+  defaultSort: { field: risk_score, direction: desc }
+  pageSize: 25
+detailView:
+  sections:
+    - { title: Applicant, fields: [applicant_name, applicant_email, country, document_type, submitted_at] }
+    - { title: Risk, fields: [risk_score, risk_flags, sanctions_hit] }
+    - { title: Review, fields: [status, reviewer_notes] }
+  showAuditTrail: true
+  showApprovals: true
+actions:
+  - key: start_review
+    label: Start review
+    kind: custom
+    permission: kyc:review
+    variant: secondary
+    setsStatus: in_review
+  - key: add_note
+    label: Save notes
+    kind: edit
+    permission: kyc:review
+    fields: [reviewer_notes]
+  - key: approve
+    label: Approve
+    kind: approve
+    permission: kyc:approve
+    variant: primary
+    confirm: true
+    setsStatus: approved
+    approval: { kind: field_true, field: sanctions_hit }
+  - key: reject
+    label: Reject
+    kind: reject
+    permission: kyc:approve
+    variant: danger
+    confirm: true
+    setsStatus: rejected
+api:
+  baseUrlEnv: KYC_API_URL
+  baseUrl: http://localhost:8001
+  resourcePath: /cases
