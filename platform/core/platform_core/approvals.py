@@ -32,7 +32,7 @@ def approval_required(policy: ApprovalPolicy, entity: dict[str, Any]) -> bool:
             return False
         value = entity.get(policy.field)
         try:
-            return float(value) >= policy.threshold  # type: ignore[arg-type]
+            return float(value) > policy.threshold  # type: ignore[arg-type]
         except (TypeError, ValueError):
             return False
     if policy.kind == "field_true":
@@ -61,6 +61,21 @@ def request_approval(
         )
     )
     if existing is not None:
+        existing.payload = payload
+        existing.reason = reason
+        existing.requested_by_id = requester.id
+        existing.requested_by_email = requester.email
+        db.flush()
+        record_audit(
+            db,
+            tool=tool,
+            actor=requester,
+            action=f"approval.updated:{action.key}",
+            entity_type=entity_type,
+            entity_id=str(entity_id),
+            after={"approval_id": existing.id, "status": PENDING},
+            context={"reason": reason},
+        )
         return existing
 
     request = ApprovalRequest(
@@ -97,11 +112,15 @@ def decide(
     approver: Principal,
     decision: str,
     comment: str = "",
+    tool: str | None = None,
 ) -> ApprovalRequest:
     if decision not in (APPROVED, REJECTED, CANCELLED):
         raise HTTPException(status_code=400, detail=f"invalid decision: {decision}")
 
-    request = db.get(ApprovalRequest, approval_id)
+    stmt = select(ApprovalRequest).where(ApprovalRequest.id == approval_id).with_for_update()
+    if tool is not None:
+        stmt = stmt.where(ApprovalRequest.tool == tool)
+    request = db.execute(stmt).scalar_one_or_none()
     if request is None:
         raise HTTPException(status_code=404, detail="approval request not found")
     if request.status in TERMINAL_STATES:
@@ -109,16 +128,23 @@ def decide(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"approval already {request.status}",
         )
-    if decision != CANCELLED and not approver.has_permission(request.required_permission):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"missing permission: {request.required_permission}",
-        )
-    if decision != CANCELLED and approver.id == request.requested_by_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="requester cannot approve their own request",
-        )
+    if decision == CANCELLED:
+        if approver.id != request.requested_by_id and not approver.has_permission(request.required_permission):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"missing permission: {request.required_permission}",
+            )
+    else:
+        if not approver.has_permission(request.required_permission):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"missing permission: {request.required_permission}",
+            )
+        if approver.id == request.requested_by_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="requester cannot approve their own request",
+            )
 
     before = {"status": request.status}
     request.status = decision

@@ -36,9 +36,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Session;
-    const exp = decodeExp(parsed.token);
-    return exp && exp * 1000 < Date.now() ? null : parsed;
+    try {
+      const parsed = JSON.parse(raw) as Session;
+      const exp = decodeExp(parsed.token);
+      return exp && exp * 1000 < Date.now() ? null : parsed;
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
   });
   const [users, setUsers] = useState<SeededUser[]>([]);
   const [loading, setLoading] = useState(false);

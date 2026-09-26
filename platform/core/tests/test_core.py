@@ -26,7 +26,7 @@ def test_principal_permission_wildcards() -> None:
     [
         (ApprovalPolicy(kind="never"), {}, False),
         (ApprovalPolicy(kind="always"), {}, True),
-        (ApprovalPolicy(kind="threshold", field="amount", threshold=500), {"amount": 500}, True),
+        (ApprovalPolicy(kind="threshold", field="amount", threshold=500), {"amount": 500}, False),
         (ApprovalPolicy(kind="threshold", field="amount", threshold=500), {"amount": 499}, False),
         (ApprovalPolicy(kind="field_true", field="high_risk"), {"high_risk": True}, True),
         (ApprovalPolicy(kind="field_true", field="high_risk"), {"high_risk": False}, False),
@@ -47,6 +47,13 @@ def test_issue_decode_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
         permissions=["kyc:read"],
     )
     assert decode_token(issue_token(principal)) == principal
+
+
+def test_default_jwt_secret_rejected_outside_dev(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PLATFORM_ENV", "production")
+    monkeypatch.delenv("PLATFORM_JWT_SECRET", raising=False)
+    with pytest.raises(RuntimeError, match="PLATFORM_JWT_SECRET must be set outside dev"):
+        issue_token(Principal(id="1", email="a@example.com", name="A"))
 
 
 @pytest.mark.parametrize("service", ["kyc", "refunds", "flags"])

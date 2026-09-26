@@ -49,7 +49,7 @@ Each tool is primarily a declarative spec (`services/<tool>/tool.yaml`) validate
 | `packages/ui-kit` | `@platform/ui-kit` | React components: `DataTable`, `QueueView`, `FilterBar`, `DetailPane`, `ApprovalWidget`, `AuditTrail`, form primitives, `Modal`, badges. MF shared singleton. |
 | `packages/tool-sdk` | `@platform/tool-sdk` | Generated `ToolConfig` types, `ToolApiClient`, `ToolRenderer` (config → UI), `createToolRemote()` (MF `mount`/`unmount` surface), `mountStandalone()`, and `vite/remote.mjs` host/remote Vite presets with the pinned React 18.3.1 + `@platform/ui-kit` singletons. |
 | `apps/shell` | `@platform/shell` | MF host. Mock OIDC login (seeded users, password `demo`), JWT session in `localStorage`, permission-filtered nav, `RemoteHost` with error boundary + retry fallback. |
-| `services/auth` | — | Mock OIDC: `/.well-known/openid-configuration`, `/authorize`, `/token` (password + code grants), `/userinfo`, `/users`. Issues HS256 JWTs that `platform_core.security` validates. |
+| `services/auth` | — | Mock OIDC: `/.well-known/openid-configuration`, `/authorize` (password-protected, one-time 5-minute codes), `/token` (password + authorization-code grants), `/userinfo`, `/users`. Issues HS256 JWTs that `platform_core.security` validates. |
 | `db/` | — | Alembic: `0001_platform_shared` (users, roles, permissions, audit_log, approval_requests in schema `platform`), then one migration per tool schema. `seed.py` is idempotent. |
 | `apps/<tool>`, `services/<tool>` | `@tools/<tool>-web` | **Tool code.** `tool.yaml` + SQLAlchemy model + optional connector + `create_tool_app(...)`. |
 
@@ -97,6 +97,9 @@ pnpm run preview         # shell:3000 + remotes:3001-3003 (Module Federation nee
 ```
 
 Sign in as any seeded user (password `demo`):
+
+For anything beyond local development, set `PLATFORM_ENV`, `PLATFORM_JWT_SECRET`,
+and `CORS_ORIGINS`.
 
 | User | Roles | Can |
 |------|-------|-----|

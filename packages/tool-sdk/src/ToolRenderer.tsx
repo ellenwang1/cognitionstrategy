@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   ApprovalWidget,
@@ -63,11 +63,17 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedIdRef = useRef<string | null>(selectedId);
+  const listReq = useRef(0);
   const [selected, setSelected] = useState<Entity | null>(null);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [approvals, setApprovals] = useState<ApprovalItem[]>([]);
   const [pendingAction, setPendingAction] = useState<ActionSpec | null>(null);
   const [notice, setNotice] = useState<{ tone: "success" | "info" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
 
   const handleError = useCallback(
     (e: unknown) => {
@@ -80,15 +86,19 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
   const pageSize = config.listView.pageSize ?? 25;
 
   const refreshList = useCallback(async () => {
+    const request = ++listReq.current;
     setLoading(true);
     setError(null);
     try {
       const res = await api.list({ page, pageSize, search, filters, sort: sort?.field, direction: sort?.direction });
+      if (request !== listReq.current) return;
       setItems(res.items);
       setTotal(res.total);
     } catch (e) {
+      if (request !== listReq.current) return;
       handleError(e);
     } finally {
+      if (request !== listReq.current) return;
       setLoading(false);
     }
   }, [api, page, pageSize, search, filters, sort, handleError]);
@@ -101,10 +111,12 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
           config.detailView.showAuditTrail !== false ? api.audit(id) : Promise.resolve([]),
           config.detailView.showApprovals !== false ? api.approvalsFor(id) : Promise.resolve([]),
         ]);
+        if (id !== selectedIdRef.current) return;
         setSelected(entity);
         setAudit(trail as unknown as AuditEntry[]);
         setApprovals(approvalList as unknown as ApprovalItem[]);
       } catch (e) {
+        if (id !== selectedIdRef.current) return;
         handleError(e);
       }
     },

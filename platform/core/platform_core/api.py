@@ -96,12 +96,16 @@ class ResourceService:
             raise HTTPException(status_code=404, detail=f"{self.entity_type} not found")
         return obj
 
-    def list(
+    def _list(
         self, db: Session, *, filters: dict[str, str], search: str | None,
         sort: str | None, direction: str, page: int, page_size: int,
-    ) -> tuple[list[Base], int]:
+    ) -> tuple[list[Base], int, dict[int, dict[str, Any]] | None]:
         stmt = select(self.model)
         columns = self.model.__table__.columns  # type: ignore[attr-defined]
+        filter_specs = [
+            spec for spec in self.config.list_view.filters
+            if filters.get(spec.field) not in (None, "")
+        ]
 
         for spec in self.config.list_view.filters:
             value = filters.get(spec.field)
@@ -126,20 +130,88 @@ class ResourceService:
             if searchable:
                 stmt = stmt.where(or_(*[c.ilike(f"%{search}%") for c in searchable]))
 
-        total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
-
         sort_field = sort or (
             self.config.list_view.default_sort.field if self.config.list_view.default_sort else None
         )
         sort_dir = direction or (
             self.config.list_view.default_sort.direction if self.config.list_view.default_sort else "desc"
         )
-        if sort_field and sort_field in columns:
-            column = columns[sort_field]
-            stmt = stmt.order_by(column.desc() if sort_dir == "desc" else column.asc())
+        derived = {
+            spec.field for spec in filter_specs if columns.get(spec.field) is None
+        }
+        if sort_field and columns.get(sort_field) is None:
+            derived.add(sort_field)
 
-        stmt = stmt.offset((page - 1) * page_size).limit(page_size)
-        return list(db.scalars(stmt)), int(total)
+        if not derived:
+            total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+            if sort_field and sort_field in columns:
+                column = columns[sort_field]
+                stmt = stmt.order_by(column.desc() if sort_dir == "desc" else column.asc())
+
+            stmt = stmt.offset((page - 1) * page_size).limit(page_size)
+            return list(db.scalars(stmt)), int(total), None
+
+        rows = list(db.scalars(stmt))
+        serialized = {id(obj): self.serialize(db, obj) for obj in rows}
+
+        def matches_filter(spec: Any, data: dict[str, Any]) -> bool:
+            value = filters[spec.field]
+            actual = data.get(spec.field)
+            if spec.kind == "boolean":
+                return bool(actual) == (value.lower() in ("1", "true", "yes"))
+            if spec.kind == "select":
+                return actual == value
+            return value.lower() in str(actual if actual is not None else "").lower()
+
+        rows = [
+            obj for obj in rows
+            if all(matches_filter(spec, serialized[id(obj)]) for spec in filter_specs)
+        ]
+        if search:
+            needle = search.lower()
+            rows = [
+                obj for obj in rows
+                if any(
+                    needle in str(serialized[id(obj)].get(name, "")).lower()
+                    for name in self.config.list_view.columns
+                )
+            ]
+
+        if sort_field:
+            non_null = [obj for obj in rows if serialized[id(obj)].get(sort_field) is not None]
+            nulls = [obj for obj in rows if serialized[id(obj)].get(sort_field) is None]
+            non_null.sort(
+                key=lambda obj: serialized[id(obj)].get(sort_field),
+                reverse=sort_dir == "desc",
+            )
+            rows = non_null + nulls
+
+        total = len(rows)
+        start = (page - 1) * page_size
+        rows = rows[start : start + page_size]
+        return rows, total, {id(obj): serialized[id(obj)] for obj in rows}
+
+    def list(
+        self, db: Session, *, filters: dict[str, str], search: str | None,
+        sort: str | None, direction: str, page: int, page_size: int,
+    ) -> tuple[list[Base], int]:
+        rows, total, _ = self._list(
+            db, filters=filters, search=search, sort=sort,
+            direction=direction, page=page, page_size=page_size,
+        )
+        return rows, total
+
+    def list_serialized(
+        self, db: Session, *, filters: dict[str, str], search: str | None,
+        sort: str | None, direction: str, page: int, page_size: int,
+    ) -> tuple[list[dict[str, Any]], int]:
+        rows, total, serialized = self._list(
+            db, filters=filters, search=search, sort=sort,
+            direction=direction, page=page, page_size=page_size,
+        )
+        if serialized is None:
+            serialized = {id(obj): self.serialize(db, obj) for obj in rows}
+        return [serialized[id(obj)] for obj in rows], total
 
     # -- actions ----------------------------------------------------------
 
@@ -193,9 +265,12 @@ class ResourceService:
         assert_permission(actor, action.permission)
         obj = self.get_or_404(db, entity_id)
         snapshot = self.serialize(db, obj)
-        snapshot.update(body.payload)
+        proposed = {**snapshot, **body.payload}
 
-        if approvals_engine.approval_required(action.approval, snapshot):
+        if (
+            approvals_engine.approval_required(action.approval, snapshot)
+            or approvals_engine.approval_required(action.approval, proposed)
+        ):
             request = approvals_engine.request_approval(
                 db,
                 tool=self.config.key,
@@ -220,7 +295,7 @@ class ResourceService:
     ) -> dict[str, Any]:
         request = approvals_engine.decide(
             db, approval_id=approval_id, approver=actor,
-            decision=body.decision, comment=body.comment,
+            decision=body.decision, comment=body.comment, tool=self.config.key,
         )
         entity: dict[str, Any] | None = None
         if request.status == approvals_engine.APPROVED:
@@ -256,12 +331,12 @@ def build_resource_router(config: ToolConfig, binding: ResourceBinding) -> APIRo
         page_size: int = Query(default=config.list_view.page_size, ge=1, le=200),
     ) -> dict[str, Any]:
         filters = {k: v for k, v in request.query_params.items()}
-        items, total = service.list(
+        items, total = service.list_serialized(
             db, filters=filters, search=search, sort=sort,
             direction=direction, page=page, page_size=page_size,
         )
         return {
-            "items": [service.serialize(db, obj) for obj in items],
+            "items": items,
             "total": total,
             "page": page,
             "pageSize": page_size,

@@ -14,7 +14,10 @@ DEFAULT_TTL_MINUTES = 12 * 60
 
 
 def jwt_secret() -> str:
-    return os.environ.get("PLATFORM_JWT_SECRET", "dev-only-not-a-real-secret")
+    secret = os.environ.get("PLATFORM_JWT_SECRET", "dev-only-not-a-real-secret")
+    if os.environ.get("PLATFORM_ENV", "dev") != "dev" and secret == "dev-only-not-a-real-secret":
+        raise RuntimeError("PLATFORM_JWT_SECRET must be set outside dev")
+    return secret
 
 
 def jwt_issuer() -> str:

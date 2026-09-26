@@ -96,3 +96,17 @@ def test_service_approval_flow() -> None:
     )
     assert approval.status_code == 200
     assert approval.json()["status"] == "pending_approval"
+
+
+def test_kyc_derived_filter_and_sort() -> None:
+    admin = token("admin@fintech.dev")
+    headers = {"Authorization": f"Bearer {admin}"}
+    kyc = TestClient(kyc_app)
+    filtered = kyc.get("/cases?sanctions_hit=true", headers=headers)
+    assert filtered.status_code == 200
+    assert filtered.json()["items"]
+    assert all(item["sanctions_hit"] for item in filtered.json()["items"])
+
+    sorted_cases = kyc.get("/cases?sort=risk_score&direction=desc", headers=headers).json()["items"]
+    scores = [item["risk_score"] for item in sorted_cases]
+    assert scores == sorted(scores, reverse=True)

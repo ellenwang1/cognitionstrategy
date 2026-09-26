@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -13,9 +15,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 app = FastAPI(title="Mock OIDC Identity Service", version="0.1.0")
+authorization_codes: dict[str, tuple[str, datetime]] = {}
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,13 +40,14 @@ def principal_for_user(db: Session, user: User) -> Principal:
 
 
 @app.get("/.well-known/openid-configuration")
-def openid_configuration() -> dict[str, str]:
+def openid_configuration() -> dict[str, object]:
     issuer = os.environ.get("PLATFORM_JWT_ISSUER", "http://localhost:8000")
     return {
         "issuer": issuer,
         "token_endpoint": f"{issuer}/token",
         "userinfo_endpoint": f"{issuer}/userinfo",
         "authorization_endpoint": f"{issuer}/authorize",
+        "grant_types_supported": ["password", "authorization_code"],
     }
 
 
@@ -77,11 +81,18 @@ async def token(request: Request, db: Session = Depends(get_db)) -> dict[str, ob
     else:
         values = dict(await request.form())
     grant_type = values.get("grant_type", "password")
-    email = values.get("username") if grant_type == "password" else values.get("code")
     if grant_type not in ("password", "authorization_code"):
         raise HTTPException(status_code=400, detail="unsupported grant_type")
-    if not email:
-        raise HTTPException(status_code=400, detail="username or code is required")
+    if grant_type == "authorization_code":
+        code = str(values.get("code", ""))
+        grant = authorization_codes.pop(code, None)
+        if grant is None or grant[1] <= datetime.now(timezone.utc):
+            raise HTTPException(status_code=401, detail="invalid authorization code")
+        email = grant[0]
+    else:
+        email = values.get("username")
+        if not email:
+            raise HTTPException(status_code=400, detail="username is required")
     user = db.scalar(select(User).where(User.email == str(email), User.active.is_(True)))
     if user is None:
         raise HTTPException(status_code=401, detail="invalid credentials")
@@ -98,8 +109,22 @@ async def token(request: Request, db: Session = Depends(get_db)) -> dict[str, ob
 
 
 @app.get("/authorize")
-def authorize(redirect_uri: str, state: str | None = None) -> object:
-    query = {"code": "admin@fintech.dev"}
+def authorize(
+    redirect_uri: str,
+    username: str,
+    password: str,
+    state: str | None = None,
+    db: Session = Depends(get_db),
+) -> object:
+    user = db.scalar(select(User).where(User.email == username, User.active.is_(True)))
+    if user is None or password != user.password:
+        raise HTTPException(status_code=401, detail="invalid credentials")
+    code = secrets.token_urlsafe(24)
+    authorization_codes[code] = (
+        user.email,
+        datetime.now(timezone.utc) + timedelta(minutes=5),
+    )
+    query = {"code": code}
     if state is not None:
         query["state"] = state
     parsed = urlparse(redirect_uri)
@@ -108,7 +133,7 @@ def authorize(redirect_uri: str, state: str | None = None) -> object:
     location = urlunparse(parsed._replace(query=urlencode(existing)))
     from fastapi.responses import RedirectResponse
 
-    return RedirectResponse(location=location, status_code=302)
+    return RedirectResponse(url=location, status_code=302)
 
 
 @app.get("/userinfo")

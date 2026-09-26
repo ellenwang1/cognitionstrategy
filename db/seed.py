@@ -50,8 +50,6 @@ def seed() -> None:
                 user = User(email=email, name=name, password="demo", active=True)
                 db.add(user)
                 db.flush()
-            user.password = "demo"
-            user.active = True
             user_by_email[email] = user
             for role_key in role_keys:
                 if db.get(UserRole, {"user_id": user.id, "role_key": role_key}) is None:
