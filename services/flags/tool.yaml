@@ -1,0 +1,47 @@
+key: flags
+name: Feature Flag Admin
+description: Manage feature flags and rollout targets; high-risk flags require approval.
+icon: flag
+entity:
+  name: feature_flag
+  label: Feature Flag
+  pluralLabel: Feature Flags
+  idField: id
+  titleField: key
+  statusField: null
+  fields:
+    - { name: id, label: ID }
+    - { name: key, label: Key, required: true }
+    - { name: description, label: Description, type: text, editable: true }
+    - { name: enabled, label: Enabled, type: boolean, editable: true }
+    - { name: rollout_target, label: Rollout target, type: enum, editable: true, enumValues: [internal, beta, "10_percent", "50_percent", everyone] }
+    - { name: high_risk, label: High risk, type: boolean, helpText: "Changes to high-risk flags require approval" }
+    - { name: owner, label: Owner }
+    - { name: updated_at, label: Updated, type: datetime }
+listView:
+  mode: table
+  columns: [key, enabled, rollout_target, high_risk, owner, updated_at]
+  filters:
+    - { field: key, label: Key, kind: search }
+    - { field: enabled, label: Enabled, kind: boolean }
+    - { field: high_risk, label: High risk, kind: boolean }
+  defaultSort: { field: key, direction: asc }
+  pageSize: 50
+detailView:
+  sections:
+    - { title: Flag, fields: [key, description, owner, updated_at] }
+    - { title: Rollout, fields: [enabled, rollout_target, high_risk] }
+  showAuditTrail: true
+  showApprovals: true
+actions:
+  - key: edit
+    label: Save changes
+    kind: edit
+    permission: flags:write
+    variant: primary
+    fields: [description, enabled, rollout_target]
+    approval: { kind: field_true, field: high_risk }
+api:
+  baseUrlEnv: FLAGS_API_URL
+  baseUrl: http://localhost:8003
+  resourcePath: /flags
