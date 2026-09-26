@@ -1,0 +1,8 @@
+FROM python:3.10-slim
+WORKDIR /app
+COPY platform/core /app/platform/core
+COPY services /app/services
+COPY db /app/db
+COPY requirements-dev.txt /app/requirements-dev.txt
+RUN pip install --no-cache-dir -r /app/requirements-dev.txt
+ENV PYTHONPATH=/app
