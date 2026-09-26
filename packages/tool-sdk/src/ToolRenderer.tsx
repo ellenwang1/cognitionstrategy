@@ -206,7 +206,20 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
     );
 
   return (
-    <div className={selected ? "grid gap-4 lg:grid-cols-[1fr_minmax(0,420px)]" : "grid gap-4"}>
+    <div className="grid gap-5">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight">{config.name}</h1>
+          {config.description ? <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{config.description}</p> : null}
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {loading ? <Spinner /> : null}
+          <span className="tabular">
+            <span className="font-semibold text-foreground">{total.toLocaleString()}</span> {total === 1 ? config.entity.label.toLowerCase() : config.entity.pluralLabel.toLowerCase()}
+          </span>
+        </div>
+      </header>
+      <div className={selected ? "grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)]" : "grid gap-5"}>
       <div className="grid min-w-0 gap-3">
         <FilterBar
           filters={(config.listView.filters ?? []).map((f) => ({ field: f.field, label: f.label, kind: f.kind ?? "search", options: f.options }))}
@@ -231,9 +244,10 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
             title={String(selected[config.entity.titleField ?? idField] ?? "")}
             status={statusField ? <StatusBadge value={selected[statusField]} /> : undefined}
             subtitle={`${config.entity.label} · ${String(selected[idField])}`}
+            onClose={() => setSelectedId(null)}
             actions={
-              <>
-                {visibleActions.map((a) => (
+              visibleActions.length > 0 ? (
+                visibleActions.map((a) => (
                   <Button
                     key={a.key}
                     variant={a.variant ?? "secondary"}
@@ -241,9 +255,8 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
                   >
                     {a.label}
                   </Button>
-                ))}
-                <Button onClick={() => setSelectedId(null)}>Close</Button>
-              </>
+                ))
+              ) : undefined
             }
             sections={config.detailView.sections.map((s) => ({
               title: s.title,
@@ -269,11 +282,7 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
       {pendingAction && selected ? (
         <ActionModal action={pendingAction} fields={fields} entity={selected} onCancel={() => setPendingAction(null)} onSubmit={(payload, reason) => runAction(pendingAction, payload, reason)} />
       ) : null}
-      {loading && items.length === 0 ? (
-        <div className="fixed bottom-4 right-4">
-          <Spinner label="Loading…" />
-        </div>
-      ) : null}
+      </div>
     </div>
   );
 }

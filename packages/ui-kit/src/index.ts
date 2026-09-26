@@ -6,3 +6,4 @@ export * from "./FilterBar";
 export * from "./DetailPane";
 export * from "./ApprovalWidget";
 export * from "./AuditTrail";
+export * from "./icons";

@@ -1,5 +1,6 @@
 import React from "react";
-import { Card } from "./primitives";
+import { X } from "lucide-react";
+import { Button, SectionLabel } from "./primitives";
 
 export interface DetailField {
   label: string;
@@ -18,36 +19,45 @@ export interface DetailPaneProps {
   subtitle?: React.ReactNode;
   sections: DetailSection[];
   actions?: React.ReactNode;
+  onClose?: () => void;
   children?: React.ReactNode;
 }
 
-export function DetailPane({ title, status, subtitle, sections, actions, children }: DetailPaneProps) {
+export function DetailPane({ title, status, subtitle, sections, actions, onClose, children }: DetailPaneProps) {
   return (
-    <div className="grid gap-4">
-      <div>
-        <div className="flex items-center gap-2 text-lg font-semibold">
-          {title}
-          {status}
-        </div>
-        {subtitle ? <div className="font-mono text-sm text-muted-foreground">{subtitle}</div> : null}
+    <aside className="grid gap-4 lg:sticky lg:top-6">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-card">
+        <header className="flex items-start justify-between gap-3 border-b px-5 py-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="truncate text-lg font-semibold tracking-tight">{title}</h2>
+              {status}
+            </div>
+            {subtitle ? <div className="mt-1 font-mono text-xs text-muted-foreground">{subtitle}</div> : null}
+          </div>
+          {onClose ? (
+            <Button size="icon-sm" variant="ghost" aria-label="Close details" onClick={onClose} className="-mr-2 -mt-1">
+              <X />
+            </Button>
+          ) : null}
+        </header>
+        {actions ? <div className="flex flex-wrap gap-2 border-b bg-muted/30 px-5 py-3">{actions}</div> : null}
+        {sections.map((s) => (
+          <section key={s.title} className="border-b px-5 py-4 last:border-b-0">
+            <SectionLabel className="mb-3">{s.title}</SectionLabel>
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
+              {s.fields.map((f) => (
+                <div key={f.label} className="min-w-0">
+                  <dt className="text-xs text-muted-foreground">{f.label}</dt>
+                  <dd className="tabular mt-0.5 break-words text-sm font-medium">{f.value}</dd>
+                  {f.hint ? <dd className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{f.hint}</dd> : null}
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
       </div>
-      {actions ? <div className="flex gap-2">{actions}</div> : null}
-      {sections.map((s) => (
-        <Card key={s.title} title={s.title}>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            {s.fields.map((f) => (
-              <div key={f.label}>
-                <dt className="text-muted-foreground">{f.label}</dt>
-                <dd>{f.value}</dd>
-                {f.hint ? (
-                  <dd className="text-xs text-muted-foreground">{f.hint}</dd>
-                ) : null}
-              </div>
-            ))}
-          </dl>
-        </Card>
-      ))}
       {children}
-    </div>
+    </aside>
   );
 }

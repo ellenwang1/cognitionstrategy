@@ -1,5 +1,6 @@
 import React from "react";
-import { Card, EmptyState } from "./primitives";
+import { ArrowRight, History } from "lucide-react";
+import { Avatar, Card, EmptyState } from "./primitives";
 
 export interface AuditEntry {
   id: number;
@@ -17,40 +18,45 @@ function show(v: unknown): string {
 
 export function AuditTrail({ entries, title = "Audit trail" }: { entries: AuditEntry[]; title?: string }) {
   return (
-    <Card title={title}>
-      {entries.length === 0 ? <EmptyState>No activity yet</EmptyState> : null}
-      <div className="grid gap-2">
-        {entries.map((e) => {
+    <Card title={title} bodyClassName="p-0">
+      {entries.length === 0 ? <EmptyState icon={<History className="h-5 w-5" />}>No activity yet</EmptyState> : null}
+      <ol className="relative">
+        {entries.map((e, i) => {
           const changes = Object.entries(e.changes ?? {});
+          const last = i === entries.length - 1;
           return (
-            <div key={e.id} className="rounded-lg border p-3 text-sm">
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span>
-                    <b>{e.actor_email}</b> · {e.action}
+            <li key={e.id} className="relative flex gap-3 px-5 py-4 text-sm">
+              {!last ? <span aria-hidden className="absolute left-[2.25rem] top-12 h-[calc(100%-2rem)] w-px bg-border" /> : null}
+              <Avatar name={e.actor_email} size="md" className="relative z-[1] ring-4 ring-card" />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <span className="min-w-0">
+                    <span className="font-medium">{e.actor_email}</span>{" "}
+                    <span className="text-muted-foreground">{e.action.replace(/_/g, " ")}</span>
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <time className="tabular whitespace-nowrap text-xs text-muted-foreground" dateTime={e.created_at}>
                     {new Date(e.created_at).toLocaleString()}
-                  </span>
+                  </time>
                 </div>
                 {changes.length > 0 ? (
-                  <div className="mt-2 grid gap-2">
+                  <dl className="mt-2 grid gap-1.5">
                     {changes.map(([field, c]) => (
-                      <div key={field} className="grid gap-1">
-                        <span className="font-medium">{field}</span>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          <pre className="rounded bg-muted p-2 text-xs">{show(c.before)}</pre>
-                          <pre className="rounded bg-muted p-2 text-xs">{show(c.after)}</pre>
-                        </div>
+                      <div key={field} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-muted/60 px-2.5 py-1.5 text-xs">
+                        <dt className="font-medium text-foreground">{field}</dt>
+                        <dd className="flex min-w-0 flex-wrap items-center gap-x-1.5">
+                          <code className="max-w-[12rem] truncate font-mono text-muted-foreground line-through decoration-muted-foreground/60">{show(c.before)}</code>
+                          <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <code className="max-w-[12rem] truncate font-mono text-foreground">{show(c.after)}</code>
+                        </dd>
                       </div>
                     ))}
-                  </div>
+                  </dl>
                 ) : null}
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ol>
     </Card>
   );
 }
