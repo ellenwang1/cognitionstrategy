@@ -5,10 +5,12 @@ import type { ToolRegistration } from "./registry";
 
 type State = { status: "loading" } | { status: "ready"; remote: ToolRemote } | { status: "error"; error: string };
 
-/** Loads a federated remote and mounts it; degrades to a fallback panel when the remote is unavailable. */
+/**
+ * Loads a federated remote and mounts it; degrades to a fallback panel when the remote is unavailable.
+ * The federation runtime caches a failed remoteEntry import, so retrying means reloading the page.
+ */
 export function RemoteHost({ tool, session, onSessionExpired }: { tool: ToolRegistration; session: Session; onSessionExpired: () => void }) {
   const [state, setState] = useState<State>({ status: "loading" });
-  const [attempt, setAttempt] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function RemoteHost({ tool, session, onSessionExpired }: { tool: ToolRegi
     return () => {
       cancelled = true;
     };
-  }, [tool, attempt]);
+  }, [tool]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -37,7 +39,7 @@ export function RemoteHost({ tool, session, onSessionExpired }: { tool: ToolRegi
   }, [state, session, tool, onSessionExpired]);
 
   if (state.status === "loading") return <Spinner label={`Loading ${tool.name}…`} />;
-  if (state.status === "error") return <RemoteFallback tool={tool} error={state.error} onRetry={() => setAttempt((a) => a + 1)} />;
+  if (state.status === "error") return <RemoteFallback tool={tool} error={state.error} onRetry={() => window.location.reload()} />;
   return <div ref={containerRef} />;
 }
 
