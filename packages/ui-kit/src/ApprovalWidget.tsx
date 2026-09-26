@@ -41,10 +41,12 @@ export function ApprovalWidget({ approvals, canDecide, onDecide, title = "Approv
           <div key={a.id} className="rounded-lg border p-3 text-sm">
             <div>
               <div>
-                <b>{a.action_key.replace(/_/g, " ")}</b> <StatusBadge value={a.status} />
+                <b>{a.action_key.replace(/_/g, " ")}</b>{" "}
+                <StatusBadge value={a.status} />
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
-                requested by {a.requested_by_email} · {new Date(a.created_at).toLocaleString()}
+                requested by {a.requested_by_email} ·{" "}
+                {new Date(a.created_at).toLocaleString()}
                 {a.reason ? ` · "${a.reason}"` : ""}
                 {a.decided_by_email ? ` · decided by ${a.decided_by_email}` : ""}
                 {a.decision_comment ? ` · "${a.decision_comment}"` : ""}
@@ -52,11 +54,27 @@ export function ApprovalWidget({ approvals, canDecide, onDecide, title = "Approv
             </div>
             {a.status === "pending" && canDecide(a) ? (
               <div className="flex items-center gap-2">
-                <TextInput placeholder="Comment" value={comments[a.id] ?? ""} onChange={(e) => setComments({ ...comments, [a.id]: e.target.value })} />
-                <Button size="sm" variant="primary" loading={busy === a.id} onClick={() => decide(a, "approved")}>
+                <TextInput
+                  placeholder="Comment"
+                  value={comments[a.id] ?? ""}
+                  onChange={(e) =>
+                    setComments({ ...comments, [a.id]: e.target.value })
+                  }
+                />
+                <Button
+                  size="sm"
+                  variant="primary"
+                  loading={busy === a.id}
+                  onClick={() => decide(a, "approved")}
+                >
                   Approve
                 </Button>
-                <Button size="sm" variant="danger" loading={busy === a.id} onClick={() => decide(a, "rejected")}>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  loading={busy === a.id}
+                  onClick={() => decide(a, "rejected")}
+                >
                   Reject
                 </Button>
               </div>

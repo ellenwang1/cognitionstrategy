@@ -39,7 +39,15 @@ function Shell() {
         </a>
         <div className="flex items-center gap-1">
           {visible.map((t) => (
-            <a key={t.key} className={`rounded-md px-3 py-1.5 text-sm ${active?.key === t.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`} href={`#/${t.key}`}>
+            <a
+              key={t.key}
+              className={`rounded-md px-3 py-1.5 text-sm ${
+                active?.key === t.key
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              href={`#/${t.key}`}
+            >
               {t.name}
             </a>
           ))}
@@ -76,7 +84,11 @@ function Home() {
       <h2 className="text-2xl font-semibold">Your tools</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {visible.map((t) => (
-          <a key={t.key} className="rounded-xl border bg-card p-6 transition-shadow hover:shadow-md" href={`#/${t.key}`}>
+          <a
+            key={t.key}
+            className="rounded-xl border bg-card p-6 transition-shadow hover:shadow-md"
+            href={`#/${t.key}`}
+          >
             <h3 className="font-semibold">{t.name}</h3>
             <div className="mt-2 text-sm text-muted-foreground">{t.description}</div>
           </a>
@@ -95,31 +107,36 @@ function Login() {
   return (
     <div className="mx-auto flex min-h-screen max-w-lg items-center p-6">
       <div className="grid w-full gap-4">
-      <h1 className="text-2xl font-semibold">Sign in</h1>
-      <p className="text-sm text-muted-foreground">Mocked OIDC: pick a seeded user. All passwords are "demo".</p>
-      {error ? <Alert tone="error">{error}</Alert> : null}
-      <Card title="Users">
-        {users.length === 0 && !error ? <Spinner label="Loading users…" /> : null}
-        <div className="grid gap-2">
-          {users.map((u) => (
-            <button key={u.id} className="flex items-center justify-between rounded-md border bg-background p-3 text-left text-sm transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50" disabled={loading} onClick={() => login(u.email)}>
-              <span>
-                <b>{u.name}</b>
-                <div className="text-xs text-muted-foreground">
-                  {u.email}
-                </div>
-              </span>
-              <span className="flex flex-wrap gap-1">
-                {u.roles.map((r) => (
-                  <Badge key={r} tone="info">
-                    {r}
-                  </Badge>
-                ))}
-              </span>
-            </button>
-          ))}
-        </div>
-      </Card>
+        <h1 className="text-2xl font-semibold">Sign in</h1>
+        <p className="text-sm text-muted-foreground">
+          Mocked OIDC: pick a seeded user. All passwords are "demo".
+        </p>
+        {error ? <Alert tone="error">{error}</Alert> : null}
+        <Card title="Users">
+          {users.length === 0 && !error ? <Spinner label="Loading users…" /> : null}
+          <div className="grid gap-2">
+            {users.map((u) => (
+              <button
+                key={u.id}
+                className="flex items-center justify-between rounded-md border bg-background p-3 text-left text-sm transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+                disabled={loading}
+                onClick={() => login(u.email)}
+              >
+                <span>
+                  <b>{u.name}</b>
+                  <div className="text-xs text-muted-foreground">{u.email}</div>
+                </span>
+                <span className="flex flex-wrap gap-1">
+                  {u.roles.map((r) => (
+                    <Badge key={r} tone="info">
+                      {r}
+                    </Badge>
+                  ))}
+                </span>
+              </button>
+            ))}
+          </div>
+        </Card>
       </div>
     </div>
   );

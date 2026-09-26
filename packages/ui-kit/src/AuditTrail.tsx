@@ -29,7 +29,9 @@ export function AuditTrail({ entries, title = "Audit trail" }: { entries: AuditE
                   <span>
                     <b>{e.actor_email}</b> · {e.action}
                   </span>
-                  <span className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleString()}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(e.created_at).toLocaleString()}
+                  </span>
                 </div>
                 {changes.length > 0 ? (
                   <div className="mt-2 grid gap-2">

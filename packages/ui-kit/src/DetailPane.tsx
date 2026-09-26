@@ -36,7 +36,13 @@ export function DetailPane({ title, status, subtitle, sections, actions, childre
         <Card key={s.title} title={s.title}>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             {s.fields.map((f) => (
-              <div key={f.label}><dt className="text-muted-foreground">{f.label}</dt><dd>{f.value}</dd>{f.hint ? <dd className="text-xs text-muted-foreground">{f.hint}</dd> : null}</div>
+              <div key={f.label}>
+                <dt className="text-muted-foreground">{f.label}</dt>
+                <dd>{f.value}</dd>
+                {f.hint ? (
+                  <dd className="text-xs text-muted-foreground">{f.hint}</dd>
+                ) : null}
+              </div>
             ))}
           </dl>
         </Card>
