@@ -75,7 +75,7 @@ migration + connector); the remaining ~80 are copy-paste scaffolding that a
 | Tool | Order | Tool LOC | Platform LOC forced | Novelty | Notes |
 |------|------:|---------:|--------------------:|--------:|-------|
 | KYC Review Queue | 1 | 252 | (all 3,710 — first tool pays for the platform) | 5 | `QueueView`, `ApprovalWidget`/`AuditTrail`, `field_true` approval policy, `Connector`/`MockConnector` + derived fields, `approve`/`reject` action kinds |
-| Refunds Dashboard | 2 | 246 | ≈ 30 | 2 | `threshold` approval policy, `money` field type; first user of `DataTable` list mode |
+| Refunds Dashboard | 2 | 246 | ≈ 30 | 2 | `threshold` approval policy, `currency` field type; first user of `DataTable` list mode |
 | Feature Flag Admin | 3 | 196 | 0 | 0 | only `edit` action + `field_true` policy, both already existed |
 
 Honesty note: the platform was designed with all three tools known, so the KYC novelty
