@@ -5,7 +5,7 @@ import { Badge, StatusBadge } from "./primitives";
 export type ValueType = "string" | "text" | "number" | "currency" | "boolean" | "enum" | "datetime" | "tags" | "json";
 
 export function formatValue(value: unknown, type: ValueType = "string", opts: { currency?: string } = {}): React.ReactNode {
-  if (value === null || value === undefined || value === "") return <span className="pk-muted">—</span>;
+  if (value === null || value === undefined || value === "") return <span className="text-muted-foreground">—</span>;
   switch (type) {
     case "boolean":
       return <Badge tone={value ? "success" : "neutral"}>{value ? "yes" : "no"}</Badge>;
@@ -28,7 +28,7 @@ export function formatValue(value: unknown, type: ValueType = "string", opts: { 
     case "tags": {
       const items = Array.isArray(value) ? value : String(value).split(",");
       return (
-        <span className="pk-tags">
+        <span className="flex flex-wrap gap-1">
           {items.filter(Boolean).map((t) => (
             <Badge key={String(t)} tone="info">
               {String(t)}
@@ -38,7 +38,7 @@ export function formatValue(value: unknown, type: ValueType = "string", opts: { 
       );
     }
     case "json":
-      return <code className="pk-mono">{JSON.stringify(value)}</code>;
+      return <code className="font-mono text-xs">{JSON.stringify(value)}</code>;
     default:
       return String(value);
   }

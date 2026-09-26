@@ -9,7 +9,7 @@ import type { Session, ToolRemote } from "./session";
 export async function mountStandalone(el: HTMLElement, remote: ToolRemote, config: ToolConfig, authUrl = "http://localhost:8000") {
   const params = new URLSearchParams(window.location.search);
   const username = params.get("user") ?? "admin@fintech.dev";
-  el.innerHTML = `<p style="font-family:sans-serif;padding:16px">Signing in as ${username}…</p>`;
+  el.innerHTML = `<p class="p-4 text-sm text-muted-foreground">Signing in as ${username}…</p>`;
   try {
     const res = await fetch(`${authUrl}/token`, {
       method: "POST",
@@ -22,10 +22,10 @@ export async function mountStandalone(el: HTMLElement, remote: ToolRemote, confi
     const principal = (await me.json()) as Session["principal"];
     el.innerHTML = "";
     const wrapper = document.createElement("div");
-    wrapper.style.padding = "16px";
+    wrapper.className = "p-4";
     el.appendChild(wrapper);
     remote.mount(wrapper, { session: { token: token.access_token, principal } });
   } catch (e) {
-    el.innerHTML = `<pre style="padding:16px;color:#c62828">Standalone mode needs the auth service at ${authUrl} and the ${config.name} API at ${config.api.baseUrl}.\n${String(e)}</pre>`;
+    el.innerHTML = `<pre class="whitespace-pre-wrap p-4 text-sm text-destructive">Standalone mode needs the auth service at ${authUrl} and the ${config.api.baseUrl} API at ${config.api.baseUrl}.\n${String(e)}</pre>`;
   }
 }

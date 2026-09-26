@@ -36,14 +36,14 @@ export function ApprovalWidget({ approvals, canDecide, onDecide, title = "Approv
   return (
     <Card title={title}>
       {approvals.length === 0 ? <EmptyState>No approval requests</EmptyState> : null}
-      <div className="pk-approval">
+      <div className="grid gap-2">
         {approvals.map((a) => (
-          <div key={a.id} className="pk-approval__item">
+          <div key={a.id} className="rounded-lg border p-3 text-sm">
             <div>
               <div>
                 <b>{a.action_key.replace(/_/g, " ")}</b> <StatusBadge value={a.status} />
               </div>
-              <div className="pk-approval__meta">
+              <div className="mt-1 text-xs text-muted-foreground">
                 requested by {a.requested_by_email} · {new Date(a.created_at).toLocaleString()}
                 {a.reason ? ` · "${a.reason}"` : ""}
                 {a.decided_by_email ? ` · decided by ${a.decided_by_email}` : ""}
@@ -51,7 +51,7 @@ export function ApprovalWidget({ approvals, canDecide, onDecide, title = "Approv
               </div>
             </div>
             {a.status === "pending" && canDecide(a) ? (
-              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <div className="flex items-center gap-2">
                 <TextInput placeholder="Comment" value={comments[a.id] ?? ""} onChange={(e) => setComments({ ...comments, [a.id]: e.target.value })} />
                 <Button size="sm" variant="primary" loading={busy === a.id} onClick={() => decide(a, "approved")}>
                   Approve
@@ -61,8 +61,8 @@ export function ApprovalWidget({ approvals, canDecide, onDecide, title = "Approv
                 </Button>
               </div>
             ) : a.status === "pending" ? (
-              <span className="pk-muted" style={{ fontSize: 12 }}>
-                needs <code className="pk-mono">{a.required_permission}</code>
+              <span className="text-xs text-muted-foreground">
+                needs <code className="font-mono">{a.required_permission}</code>
               </span>
             ) : null}
           </div>

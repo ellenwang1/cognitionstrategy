@@ -194,8 +194,8 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
     );
 
   return (
-    <div className="pk-root" style={{ display: "grid", gridTemplateColumns: selected ? "minmax(380px, 1fr) minmax(420px, 1fr)" : "1fr", gap: 16 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 }}>
+    <div className={selected ? "grid gap-4 lg:grid-cols-[1fr_minmax(0,420px)]" : "grid gap-4"}>
+      <div className="grid min-w-0 gap-3">
         <FilterBar
           filters={(config.listView.filters ?? []).map((f) => ({ field: f.field, label: f.label, kind: f.kind ?? "search", options: f.options }))}
           values={filters}
@@ -214,7 +214,7 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
         {listPane}
       </div>
       {selected ? (
-        <div style={{ minWidth: 0 }}>
+        <div className="min-w-0">
           <DetailPane
             title={String(selected[config.entity.titleField ?? idField] ?? "")}
             status={statusField ? <StatusBadge value={selected[statusField]} /> : undefined}
@@ -258,7 +258,7 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
         <ActionModal action={pendingAction} fields={fields} entity={selected} onCancel={() => setPendingAction(null)} onSubmit={(payload, reason) => runAction(pendingAction, payload, reason)} />
       ) : null}
       {loading && items.length === 0 ? (
-        <div style={{ position: "fixed", bottom: 16, right: 16 }}>
+        <div className="fixed bottom-4 right-4">
           <Spinner label="Loading…" />
         </div>
       ) : null}
@@ -310,7 +310,7 @@ function ActionModal({
         </>
       }
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="grid gap-3">
         {editable.map((f) => (
           <FormField key={f.name} label={f.label} hint={f.helpText ?? undefined}>
             {f.type === "boolean" ? (

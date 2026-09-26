@@ -21,7 +21,7 @@ export function FilterBar({ filters, values, onChange, search, onSearchChange, s
   const set = (field: string, value: string) => onChange({ ...values, [field]: value });
   const hasAny = Boolean(search) || Object.values(values).some(Boolean);
   return (
-    <div className="pk-filterbar">
+    <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3">
       {onSearchChange ? (
         <FormField label="Search">
           <TextInput value={search ?? ""} placeholder={searchPlaceholder} onChange={(e) => onSearchChange(e.target.value)} />

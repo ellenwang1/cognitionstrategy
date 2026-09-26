@@ -19,25 +19,27 @@ export function AuditTrail({ entries, title = "Audit trail" }: { entries: AuditE
   return (
     <Card title={title}>
       {entries.length === 0 ? <EmptyState>No activity yet</EmptyState> : null}
-      <div className="pk-audit">
+      <div className="grid gap-2">
         {entries.map((e) => {
           const changes = Object.entries(e.changes ?? {});
           return (
-            <div key={e.id} className="pk-audit__item">
-              <span className="pk-audit__dot" />
+            <div key={e.id} className="rounded-lg border p-3 text-sm">
               <div>
-                <div className="pk-audit__head">
+                <div className="flex items-center justify-between gap-2">
                   <span>
                     <b>{e.actor_email}</b> · {e.action}
                   </span>
-                  <span className="pk-muted">{new Date(e.created_at).toLocaleString()}</span>
+                  <span className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleString()}</span>
                 </div>
                 {changes.length > 0 ? (
-                  <div className="pk-audit__changes">
+                  <div className="mt-2 grid gap-2">
                     {changes.map(([field, c]) => (
-                      <div key={field} className="pk-audit__change">
-                        {field}: <del>{show(c.before)}</del>
-                        <ins>{show(c.after)}</ins>
+                      <div key={field} className="grid gap-1">
+                        <span className="font-medium">{field}</span>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <pre className="rounded bg-muted p-2 text-xs">{show(c.before)}</pre>
+                          <pre className="rounded bg-muted p-2 text-xs">{show(c.after)}</pre>
+                        </div>
                       </div>
                     ))}
                   </div>

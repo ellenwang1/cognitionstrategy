@@ -23,26 +23,22 @@ export interface DetailPaneProps {
 
 export function DetailPane({ title, status, subtitle, sections, actions, children }: DetailPaneProps) {
   return (
-    <div className="pk-detail">
+    <div className="grid gap-4">
       <div>
-        <div className="pk-detail__title">
+        <div className="flex items-center gap-2 text-lg font-semibold">
           {title}
           {status}
         </div>
-        {subtitle ? <div className="pk-muted pk-mono">{subtitle}</div> : null}
+        {subtitle ? <div className="font-mono text-sm text-muted-foreground">{subtitle}</div> : null}
       </div>
-      {actions ? <div className="pk-detail__actions">{actions}</div> : null}
+      {actions ? <div className="flex gap-2">{actions}</div> : null}
       {sections.map((s) => (
         <Card key={s.title} title={s.title}>
-          <div className="pk-detail__grid">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             {s.fields.map((f) => (
-              <div key={f.label}>
-                <div className="pk-detail__label">{f.label}</div>
-                <div className="pk-detail__value">{f.value}</div>
-                {f.hint ? <div className="pk-muted" style={{ fontSize: 11 }}>{f.hint}</div> : null}
-              </div>
+              <div key={f.label}><dt className="text-muted-foreground">{f.label}</dt><dd>{f.value}</dd>{f.hint ? <dd className="text-xs text-muted-foreground">{f.hint}</dd> : null}</div>
             ))}
-          </div>
+          </dl>
         </Card>
       ))}
       {children}

@@ -43,11 +43,11 @@ export function RemoteHost({ tool, session, onSessionExpired }: { tool: ToolRegi
 
 export function RemoteFallback({ tool, error, onRetry }: { tool: ToolRegistration; error: string; onRetry: () => void }) {
   return (
-    <div className="shell__fallback pk-root">
+    <div>
       <Card title={`${tool.name} is unavailable`}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="grid gap-3">
           <Alert tone="error">The tool's frontend could not be loaded. Other tools are unaffected.</Alert>
-          <code className="pk-mono pk-muted">{error}</code>
+          <code className="break-all font-mono text-sm text-muted-foreground">{error}</code>
           <div>
             <Button variant="primary" onClick={onRetry}>
               Retry

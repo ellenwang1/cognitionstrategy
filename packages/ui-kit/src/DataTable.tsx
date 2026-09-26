@@ -1,5 +1,7 @@
 import React from "react";
 import { Button, EmptyState } from "./primitives";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./components/ui/table";
 
 export interface Column<Row> {
   key: string;
@@ -33,33 +35,33 @@ export function DataTable<Row>({ columns, rows, rowKey, selectedKey, onRowClick,
     onSortChange({ field: key, direction });
   };
   return (
-    <div className="pk-table-wrap">
-      <table className="pk-table">
-        <thead>
-          <tr>
+    <div className="space-y-3">
+      <Table>
+        <TableHeader>
+          <TableRow>
             {columns.map((c) => (
-              <th key={c.key} onClick={() => c.sortable !== false && toggleSort(c.key)}>
+              <TableHead key={c.key} className={c.sortable !== false ? "cursor-pointer select-none" : undefined} onClick={() => c.sortable !== false && toggleSort(c.key)}>
                 {c.label}
-                {sort?.field === c.key ? (sort.direction === "asc" ? " ▲" : " ▼") : ""}
-              </th>
+                {c.sortable !== false ? (sort?.field === c.key ? (sort.direction === "asc" ? <ArrowUp className="ml-1 inline h-3 w-3" /> : <ArrowDown className="ml-1 inline h-3 w-3" />) : <ArrowUpDown className="ml-1 inline h-3 w-3 opacity-50" />) : null}
+              </TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((row) => {
             const key = rowKey(row);
             return (
-              <tr key={key} className={selectedKey === key ? "is-selected" : ""} onClick={() => onRowClick?.(row)}>
+              <TableRow key={key} className={selectedKey === key ? "bg-muted" : undefined} onClick={() => onRowClick?.(row)}>
                 {columns.map((c) => (
-                  <td key={c.key}>{c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key] ?? "")}</td>
+                  <TableCell key={c.key}>{c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key] ?? "")}</TableCell>
                 ))}
-              </tr>
+              </TableRow>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       {!loading && rows.length === 0 ? <EmptyState>{emptyMessage}</EmptyState> : null}
-      {loading ? <div className="pk-table__empty">Loading…</div> : null}
+      {loading ? <div className="py-8 text-center text-sm text-muted-foreground">Loading…</div> : null}
       {pagination ? <Pagination {...pagination} /> : null}
     </div>
   );
@@ -68,15 +70,15 @@ export function DataTable<Row>({ columns, rows, rowKey, selectedKey, onRowClick,
 export function Pagination({ page, pageSize, total, onPageChange }: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   return (
-    <div className="pk-pagination">
+    <div className="flex items-center justify-between text-sm text-muted-foreground">
       <span>
         {total === 0 ? "0" : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)}`} of {total}
       </span>
-      <span style={{ display: "flex", gap: 6 }}>
+      <span className="flex items-center gap-2">
         <Button size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
           Prev
         </Button>
-        <span style={{ alignSelf: "center" }}>
+        <span>
           {page} / {pages}
         </span>
         <Button size="sm" disabled={page >= pages} onClick={() => onPageChange(page + 1)}>
