@@ -1,0 +1,64 @@
+key: refunds
+name: Refunds Dashboard
+description: Review and approve customer refund requests sourced from the payments processor.
+icon: banknote
+entity:
+  name: refund_request
+  label: Refund Request
+  pluralLabel: Refund Requests
+  idField: id
+  titleField: order_id
+  statusField: status
+  fields:
+    - { name: id, label: Refund ID }
+    - { name: order_id, label: Order }
+    - { name: customer_email, label: Customer }
+    - { name: amount, label: Amount, type: currency, required: true }
+    - { name: currency, label: Currency }
+    - { name: reason, label: Reason, type: enum, enumValues: [duplicate, fraud, customer_request, defective, other] }
+    - { name: status, label: Status, type: enum, enumValues: [requested, approved, rejected, refunded] }
+    - { name: payment_method, label: Payment method }
+    - { name: payment_status, label: Processor status }
+    - { name: notes, label: Notes, type: text, editable: true }
+    - { name: requested_at, label: Requested, type: datetime }
+listView:
+  mode: table
+  columns: [order_id, customer_email, amount, currency, reason, status, requested_at]
+  filters:
+    - { field: status, label: Status, kind: select, options: [requested, approved, rejected, refunded] }
+    - { field: reason, label: Reason, kind: select, options: [duplicate, fraud, customer_request, defective, other] }
+    - { field: customer_email, label: Customer, kind: search }
+  defaultSort: { field: requested_at, direction: desc }
+  pageSize: 25
+detailView:
+  sections:
+    - { title: Order, fields: [order_id, customer_email, requested_at] }
+    - { title: Refund, fields: [amount, currency, reason, status, notes] }
+    - { title: Payments processor, fields: [payment_method, payment_status] }
+  showAuditTrail: true
+  showApprovals: true
+actions:
+  - key: add_note
+    label: Save notes
+    kind: edit
+    permission: refunds:review
+    fields: [notes]
+  - key: approve
+    label: Approve refund
+    kind: approve
+    permission: refunds:approve
+    variant: primary
+    confirm: true
+    setsStatus: approved
+    approval: { kind: threshold, field: amount, threshold: 500 }
+  - key: reject
+    label: Reject
+    kind: reject
+    permission: refunds:approve
+    variant: danger
+    confirm: true
+    setsStatus: rejected
+api:
+  baseUrlEnv: REFUNDS_API_URL
+  baseUrl: http://localhost:8002
+  resourcePath: /refunds
