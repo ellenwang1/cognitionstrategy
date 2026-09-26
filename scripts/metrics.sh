@@ -38,7 +38,7 @@ if [ "${1:-}" = "--commits" ]; then
   echo
   echo "per-commit attribution (added+deleted lines, tracked source only)"
   git log --reverse --format='%h %s' | while read -r sha subject; do
-    git show --numstat --format='' "$sha" | grep -E "$SRC_GLOB" | grep -Ev "$EXCLUDE" \
+    { git show --numstat --format='' "$sha" | grep -E "$SRC_GLOB" | grep -Ev "$EXCLUDE" || true; } \
       | awk -v sha="$sha" -v subj="$subject" '
         { n = $1 + $2; f = $3
           if (f ~ /^(apps|services)\/(kyc|refunds|flags)\// || f ~ /versions\/[0-9]+_(kyc|refunds|flags)\.py$/) tool += n
