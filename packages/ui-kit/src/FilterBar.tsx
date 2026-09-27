@@ -1,5 +1,6 @@
 import React from "react";
-import { Button, FormField, Select, TextInput } from "./primitives";
+import { Search, X } from "lucide-react";
+import { Button, Select, TextInput } from "./primitives";
 
 export interface FilterDef {
   field: string;
@@ -17,35 +18,50 @@ export interface FilterBarProps {
   searchPlaceholder?: string;
 }
 
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+      <span className="whitespace-nowrap">{label}</span>
+      {children}
+    </label>
+  );
+}
+
 export function FilterBar({ filters, values, onChange, search, onSearchChange, searchPlaceholder = "Search…" }: FilterBarProps) {
   const set = (field: string, value: string) => onChange({ ...values, [field]: value });
-  const hasAny = Boolean(search) || Object.values(values).some(Boolean);
+  const activeCount = (search ? 1 : 0) + Object.values(values).filter(Boolean).length;
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3">
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2 shadow-card">
       {onSearchChange ? (
-        <FormField label="Search">
-          <TextInput value={search ?? ""} placeholder={searchPlaceholder} onChange={(e) => onSearchChange(e.target.value)} />
-        </FormField>
+        <div className="relative w-full sm:w-64">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <TextInput className="h-8 pl-8 shadow-none" value={search ?? ""} placeholder={searchPlaceholder} onChange={(e) => onSearchChange(e.target.value)} />
+        </div>
       ) : null}
+      {filters.length > 0 ? <span className="hidden h-5 w-px bg-border sm:block" /> : null}
       {filters.map((f) => (
-        <FormField key={f.field} label={f.label}>
+        <Field key={f.field} label={f.label}>
           {f.kind === "select" ? (
-            <Select value={values[f.field] ?? ""} options={f.options ?? []} placeholder="Any" onChange={(e) => set(f.field, e.target.value)} />
+            <Select className="w-36 [&>select]:h-8 [&>select]:shadow-none" value={values[f.field] ?? ""} options={f.options ?? []} placeholder="Any" onChange={(e) => set(f.field, e.target.value)} />
           ) : f.kind === "boolean" ? (
-            <Select value={values[f.field] ?? ""} options={["true", "false"]} placeholder="Any" onChange={(e) => set(f.field, e.target.value)} />
+            <Select className="w-24 [&>select]:h-8 [&>select]:shadow-none" value={values[f.field] ?? ""} options={["true", "false"]} placeholder="Any" onChange={(e) => set(f.field, e.target.value)} />
           ) : (
-            <TextInput value={values[f.field] ?? ""} onChange={(e) => set(f.field, e.target.value)} />
+            <TextInput className="h-8 w-32 shadow-none" value={values[f.field] ?? ""} onChange={(e) => set(f.field, e.target.value)} />
           )}
-        </FormField>
+        </Field>
       ))}
-      {hasAny ? (
+      {activeCount > 0 ? (
         <Button
+          size="sm"
+          variant="ghost"
+          className="ml-auto"
           onClick={() => {
             onChange({});
             onSearchChange?.("");
           }}
         >
-          Clear
+          <X />
+          Clear {activeCount > 1 ? `${activeCount} filters` : "filter"}
         </Button>
       ) : null}
     </div>

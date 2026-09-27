@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Button, Card, EmptyState, StatusBadge, TextInput } from "./primitives";
+import { ShieldCheck } from "lucide-react";
+import { Avatar, Badge, Button, Card, EmptyState, StatusBadge, TextInput } from "./primitives";
 
 export interface ApprovalItem {
   id: string;
@@ -33,59 +34,64 @@ export function ApprovalWidget({ approvals, canDecide, onDecide, title = "Approv
     }
   };
 
+  const pending = approvals.filter((a) => a.status === "pending").length;
+
   return (
-    <Card title={title}>
-      {approvals.length === 0 ? <EmptyState>No approval requests</EmptyState> : null}
-      <div className="grid gap-2">
+    <Card
+      title={
+        <>
+          {title}
+          {pending > 0 ? <Badge tone="warning">{pending} pending</Badge> : null}
+        </>
+      }
+      bodyClassName="p-0"
+    >
+      {approvals.length === 0 ? <EmptyState icon={<ShieldCheck className="h-5 w-5" />}>No approval requests</EmptyState> : null}
+      <ul className="divide-y">
         {approvals.map((a) => (
-          <div key={a.id} className="rounded-lg border p-3 text-sm">
-            <div>
-              <div>
-                <b>{a.action_key.replace(/_/g, " ")}</b>{" "}
-                <StatusBadge value={a.status} />
-              </div>
-              <div className="mt-1 text-xs text-muted-foreground">
-                requested by {a.requested_by_email} ·{" "}
-                {new Date(a.created_at).toLocaleString()}
-                {a.reason ? ` · "${a.reason}"` : ""}
-                {a.decided_by_email ? ` · decided by ${a.decided_by_email}` : ""}
-                {a.decision_comment ? ` · "${a.decision_comment}"` : ""}
+          <li key={a.id} className="grid gap-3 px-5 py-4 text-sm">
+            <div className="flex items-start gap-3">
+              <Avatar name={a.requested_by_email} size="md" />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium capitalize">{a.action_key.replace(/_/g, " ")}</span>
+                  <StatusBadge value={a.status} />
+                </div>
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  Requested by <span className="font-medium text-foreground">{a.requested_by_email}</span> · {new Date(a.created_at).toLocaleString()}
+                </div>
+                {a.reason ? <blockquote className="mt-2 border-l-2 border-border pl-3 text-xs italic text-muted-foreground">“{a.reason}”</blockquote> : null}
+                {a.decided_by_email ? (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    Decided by <span className="font-medium text-foreground">{a.decided_by_email}</span>
+                    {a.decision_comment ? <> · “{a.decision_comment}”</> : null}
+                  </div>
+                ) : null}
               </div>
             </div>
             {a.status === "pending" && canDecide(a) ? (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 pl-11">
                 <TextInput
-                  placeholder="Comment"
+                  className="h-8 min-w-0 flex-1"
+                  placeholder="Add a comment (optional)"
                   value={comments[a.id] ?? ""}
-                  onChange={(e) =>
-                    setComments({ ...comments, [a.id]: e.target.value })
-                  }
+                  onChange={(e) => setComments({ ...comments, [a.id]: e.target.value })}
                 />
-                <Button
-                  size="sm"
-                  variant="primary"
-                  loading={busy === a.id}
-                  onClick={() => decide(a, "approved")}
-                >
+                <Button size="sm" variant="primary" loading={busy === a.id} onClick={() => decide(a, "approved")}>
                   Approve
                 </Button>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  loading={busy === a.id}
-                  onClick={() => decide(a, "rejected")}
-                >
+                <Button size="sm" variant="danger" loading={busy === a.id} onClick={() => decide(a, "rejected")}>
                   Reject
                 </Button>
               </div>
             ) : a.status === "pending" ? (
-              <span className="text-xs text-muted-foreground">
-                needs <code className="font-mono">{a.required_permission}</code>
-              </span>
+              <div className="pl-11 text-xs text-muted-foreground">
+                Awaiting someone with <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">{a.required_permission}</code>
+              </div>
             ) : null}
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </Card>
   );
 }
