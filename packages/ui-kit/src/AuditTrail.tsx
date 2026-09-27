@@ -44,9 +44,9 @@ export function AuditTrail({ entries, title = "Audit trail" }: { entries: AuditE
                       <div key={field} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-muted/60 px-2.5 py-1.5 text-xs">
                         <dt className="font-medium text-foreground">{field}</dt>
                         <dd className="flex min-w-0 flex-wrap items-center gap-x-1.5">
-                          <code className="max-w-[12rem] truncate font-mono text-muted-foreground line-through decoration-muted-foreground/60">{show(c.before)}</code>
+                          <code className="break-all font-mono text-muted-foreground line-through decoration-muted-foreground/60">{show(c.before)}</code>
                           <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-                          <code className="max-w-[12rem] truncate font-mono text-foreground">{show(c.after)}</code>
+                          <code className="break-all font-mono text-foreground">{show(c.after)}</code>
                         </dd>
                       </div>
                     ))}

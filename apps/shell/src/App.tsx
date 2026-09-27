@@ -78,7 +78,7 @@ function Shell() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="app-sidebar sticky top-0 h-screen w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-3 py-4">
+      <aside className="app-sidebar sticky top-0 h-screen w-60 shrink-0 flex-col overflow-y-auto border-r border-sidebar-border bg-sidebar px-3 py-4">
         <div className="px-2">
           <Brand />
         </div>

@@ -46,11 +46,11 @@ export function QueueView({ items, selectedKey, onSelect, loading, emptyMessage 
               </div>
             </div>
             {item.meta.length > 0 ? (
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3 lg:grid-cols-5">
+              <dl className="grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-x-6 gap-y-2">
                 {item.meta.map((m) => (
                   <div key={m.label} className="min-w-0">
                     <dt className="truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{m.label}</dt>
-                    <dd className="tabular mt-0.5 truncate text-sm text-foreground">{m.value}</dd>
+                    <dd className="tabular mt-0.5 break-words text-sm text-foreground">{m.value}</dd>
                   </div>
                 ))}
               </dl>
