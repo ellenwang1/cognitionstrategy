@@ -68,6 +68,16 @@ def test_service_approval_flow() -> None:
     assert denied.status_code == 403
 
     max_manager = token("max.manager@fintech.dev")
+    approvals_before = refunds.get(f"/refunds/{refund_id}/approvals", headers=headers).json()
+    no_reason = refunds.post(
+        f"/refunds/{refund_id}/actions/approve",
+        headers={"Authorization": f"Bearer {max_manager}"},
+        json={"reason": "  "},
+    )
+    assert no_reason.status_code == 422
+    assert "reason is required" in no_reason.json()["detail"]
+    assert refunds.get(f"/refunds/{refund_id}/approvals", headers=headers).json() == approvals_before
+
     pending = refunds.post(
         f"/refunds/{refund_id}/actions/approve",
         headers={"Authorization": f"Bearer {max_manager}"},

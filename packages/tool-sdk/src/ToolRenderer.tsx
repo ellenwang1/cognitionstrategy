@@ -136,8 +136,8 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
     }
   }, [selectedId, refreshSelected]);
 
-  const runAction = async (action: ActionSpec, payload: Record<string, unknown>, reason: string) => {
-    if (!selectedId) return;
+  const runAction = async (action: ActionSpec, payload: Record<string, unknown>, reason: string): Promise<string | null> => {
+    if (!selectedId) return null;
     setNotice(null);
     try {
       const res = await api.act(selectedId, action.key, payload, reason);
@@ -148,8 +148,11 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
       );
       setPendingAction(null);
       await Promise.all([refreshSelected(selectedId), refreshList()]);
+      return null;
     } catch (e) {
-      setNotice({ tone: "error", text: e instanceof Error ? e.message : String(e) });
+      const message = e instanceof Error ? e.message : String(e);
+      if (!pendingAction) setNotice({ tone: "error", text: message });
+      return message;
     }
   };
 
@@ -280,7 +283,7 @@ export function ToolRenderer({ config, session, apiBaseUrl, onSessionExpired }: 
         </div>
       ) : null}
       {pendingAction && selected ? (
-        <ActionModal action={pendingAction} fields={fields} entity={selected} onCancel={() => setPendingAction(null)} onSubmit={(payload, reason) => runAction(pendingAction, payload, reason)} />
+        <ActionModal action={pendingAction} fields={fields} entity={selected} titleField={config.entity.titleField ?? idField} onCancel={() => setPendingAction(null)} onSubmit={(payload, reason) => runAction(pendingAction, payload, reason)} />
       ) : null}
       </div>
     </div>
@@ -291,19 +294,22 @@ function ActionModal({
   action,
   fields,
   entity,
+  titleField,
   onCancel,
   onSubmit,
 }: {
   action: ActionSpec;
   fields: Map<string, EntityField>;
   entity: Entity;
+  titleField: string;
   onCancel: () => void;
-  onSubmit: (payload: Record<string, unknown>, reason: string) => Promise<void>;
+  onSubmit: (payload: Record<string, unknown>, reason: string) => Promise<string | null>;
 }) {
   const editable = (action.fields ?? []).map((n) => fields.get(n)).filter((f): f is EntityField => Boolean(f));
   const [payload, setPayload] = useState<Record<string, unknown>>(() => Object.fromEntries(editable.map((f) => [f.name, entity[f.name] ?? (f.type === "boolean" ? false : "")])));
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const set = (name: string, value: unknown) => setPayload((p) => ({ ...p, [name]: value }));
 
@@ -319,8 +325,9 @@ function ActionModal({
             loading={busy}
             onClick={async () => {
               setBusy(true);
+              setError(null);
               try {
-                await onSubmit(payload, reason);
+                setError(await onSubmit(payload, reason));
               } finally {
                 setBusy(false);
               }
@@ -347,14 +354,15 @@ function ActionModal({
             )}
           </FormField>
         ))}
-        {action.confirm || action.approval?.kind !== "never" ? (
-          <FormField label="Reason (recorded in the audit trail)">
-            <TextInput value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Optional" />
+        {action.confirm || action.requireReason || action.approval?.kind !== "never" ? (
+          <FormField label={action.requireReason ? "Reason (required, recorded in the audit trail)" : "Reason (recorded in the audit trail)"}>
+            <TextInput value={reason} onChange={(e) => setReason(e.target.value)} placeholder={action.requireReason ? "Required" : "Optional"} />
           </FormField>
         ) : null}
+        {error ? <Alert tone="error">{error}</Alert> : null}
         {action.confirm ? (
           <Alert tone="info">
-            Confirm <b>{action.label}</b> on <b>{String(entity[Object.keys(entity)[0]])}</b>? This is recorded in the audit trail.
+            Confirm <b>{action.label}</b> on <b>{String(entity[titleField] ?? entity[Object.keys(entity)[0]])}</b>? This is recorded in the audit trail.
           </Alert>
         ) : null}
       </div>

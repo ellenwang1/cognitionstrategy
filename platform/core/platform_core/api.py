@@ -263,6 +263,10 @@ class ResourceService:
         if action is None:
             raise HTTPException(status_code=404, detail=f"unknown action: {action_key}")
         assert_permission(actor, action.permission)
+        if action.require_reason and not body.reason.strip():
+            raise HTTPException(
+                status_code=422, detail=f"a reason is required for '{action.label}'"
+            )
         obj = self.get_or_404(db, entity_id)
         snapshot = self.serialize(db, obj)
         proposed = {**snapshot, **body.payload}

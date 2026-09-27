@@ -49,6 +49,7 @@ actions:
     permission: refunds:approve
     variant: primary
     confirm: true
+    requireReason: true
     setsStatus: approved
     approval: { kind: threshold, field: amount, threshold: 500 }
   - key: reject
@@ -57,6 +58,7 @@ actions:
     permission: refunds:approve
     variant: danger
     confirm: true
+    requireReason: true
     setsStatus: rejected
 api:
   baseUrlEnv: REFUNDS_API_URL

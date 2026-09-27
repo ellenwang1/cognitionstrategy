@@ -72,6 +72,7 @@ export interface ActionSpec {
   permission: string;
   variant?: "primary" | "danger" | "secondary";
   confirm?: boolean;
+  requireReason?: boolean;
   fields?: string[];
   approval?: ApprovalPolicy;
   setsStatus?: string | null;
