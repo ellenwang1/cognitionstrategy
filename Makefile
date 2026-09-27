@@ -1,7 +1,7 @@
 PYTHON ?= .venv/bin/python
 ALEMBIC ?= .venv/bin/alembic
 
-.PHONY: venv db-up migrate seed api schema test lint
+.PHONY: venv db-up migrate seed demo-reset api schema test lint
 
 venv:
 	python3 -m venv .venv
@@ -15,6 +15,9 @@ migrate:
 
 seed:
 	PYTHONPATH=. $(PYTHON) db/seed.py
+
+demo-reset:
+	PYTHONPATH=. $(PYTHON) scripts/demo_reset.py
 
 api:
 	./scripts/run_services.sh

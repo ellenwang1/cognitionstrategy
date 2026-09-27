@@ -86,7 +86,7 @@ export function ApprovalWidget({ approvals, canDecide, onDecide, title = "Approv
               </div>
             ) : a.status === "pending" ? (
               <div className="pl-11 text-xs text-muted-foreground">
-                Awaiting someone with <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">{a.required_permission}</code>
+                Awaiting a second approver with <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">{a.required_permission}</code>
               </div>
             ) : null}
           </li>

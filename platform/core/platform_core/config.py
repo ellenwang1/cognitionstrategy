@@ -111,6 +111,7 @@ class ActionSpec(BaseModel):
     permission: str
     variant: Literal["primary", "danger", "secondary"] = "secondary"
     confirm: bool = False
+    require_reason: bool = Field(default=False, alias="requireReason")
     fields: list[str] = Field(default_factory=list)
     approval: ApprovalPolicy = Field(default_factory=ApprovalPolicy)
     sets_status: str | None = Field(default=None, alias="setsStatus")

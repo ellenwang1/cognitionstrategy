@@ -35,6 +35,10 @@
           "default": false,
           "type": "boolean"
         },
+        "requireReason": {
+          "default": false,
+          "type": "boolean"
+        },
         "fields": {
           "items": {
             "type": "string"
