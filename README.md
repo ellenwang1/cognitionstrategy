@@ -1,105 +1,72 @@
-# Internal Tools Platform — monorepo prototype
+# Internal Tools Platform
 
-A prototype of a config-driven internal-tools platform for a small fintech, built to
-answer one question: **what is the marginal effort of the Nth internal tool?**
-Three tools (KYC Review Queue, Refunds Dashboard, Feature Flag Admin) are shipped as
-thin verticals on top of shared platform packages; see [METRICS.md](METRICS.md) for how
-effort/reuse is measured.
+A platform for building internal tools with permissions, audit and approval flows built in.
 
-## Architecture
+## Overview
 
-```
-                       browser
-                          │
-   ┌──────────────────────┴────────────────────────┐
-   │ apps/shell  (Module Federation host, :3000)   │  mocked OIDC login, nav, tool registry,
-   │   loads  kyc/Tool  refunds/Tool  flags/Tool   │  fallback UI when a remote fails
-   └───────┬───────────────┬───────────────┬───────┘
-           │ remoteEntry   │               │
-   apps/kyc :3001   apps/refunds :3002   apps/flags :3003     ← each = tool.yaml + 8 lines
-           └──────── @platform/tool-sdk  ──────────┘           (shared singletons: react,
-                          @platform/ui-kit                      react-dom, @platform/ui-kit)
-                          │  REST + Bearer JWT
-   services/kyc :8001   services/refunds :8002   services/flags :8003   services/auth :8000
-           └──────── platform/core (platform_core) ─────────┘
-              RBAC · audit · approvals · config loader · connectors · generated CRUD/action API
-                          │
-                    Postgres  (schemas: platform, kyc, refunds, flags)
-```
+Internal tools (review queues, admin dashboards, ops consoles) all need the same governance:
+who can see what, who can do what, who has to sign off, and a record of what happened. This
+platform provides those once. A tool is described in a `tool.yaml` (entity, list/detail
+views, actions, required permissions, approval policies); the platform generates the REST API
+and the UI, enforces RBAC on every request, writes an append-only audit log, and routes gated
+actions through an approvals state machine. Tools load into a shared shell as Module
+Federation remotes and deploy independently.
 
-### The contract: `tool.yaml`
+Three example tools ship in this repo: **KYC Review Queue**, **Refunds Dashboard** and
+**Feature Flag Admin**. Each is a `tool.yaml`, a SQLAlchemy model and a few lines of glue.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the `tool.yaml` contract and how to add a tool.
 
-Each tool is primarily a declarative spec (`services/<tool>/tool.yaml`) validated by
-`platform_core.config.ToolConfig` (Pydantic). Its JSON Schema is exported to
-`packages/tool-sdk/schema/tool-config.schema.json` and compiled to TypeScript
-(`packages/tool-sdk/src/generated/tool-config.ts`), so **one contract types both sides**:
+### Dependencies
 
-| Section       | Backend (`platform_core.api.create_tool_app`)                  | Frontend (`tool-sdk` `ToolRenderer`)         |
-|---------------|----------------------------------------------------------------|----------------------------------------------|
-| `entity`      | column ↔ field mapping, derived fields via connector           | value formatting per `FieldType`             |
-| `listView`    | `GET /items` filters / search / sort / pagination              | `QueueView` or `DataTable` + `FilterBar`     |
-| `detailView`  | `GET /items/{id}`, `/audit`, `/approvals`                      | `DetailPane`, `AuditTrail`, `ApprovalWidget` |
-| `actions`     | `POST /items/{id}/actions/{key}` with permission gate + approval policy | permission-aware buttons, confirm modal |
+- **Upstream**: Postgres 16 (shared `platform` schema plus one schema per tool); an OIDC-style
+  token issuer (`services/auth` is the mock used for local dev).
+- **Downstream**: each tool's frontend (`apps/<tool>`) and API (`services/<tool>`) depend on
+  `@platform/tool-sdk`, `@platform/ui-kit` and `platform_core`.
 
-### Layers
+## Local Development Setup
 
-| Path | Package | Role |
-|------|---------|------|
-| `platform/core` | `platform-core` (pip) | RBAC (`require_permission`, wildcard perms), append-only audit (`record_audit`, before/after diff), approvals state machine (`request_approval`/`decide`), `ToolConfig` loader, `Connector` / `PostgresConnector` / `MockConnector`, and `create_tool_app()` which generates the whole per-tool FastAPI surface from a config + SQLAlchemy model. |
-| `packages/ui-kit` | `@platform/ui-kit` | React components: `DataTable`, `QueueView`, `FilterBar`, `DetailPane`, `ApprovalWidget`, `AuditTrail`, form primitives, `Modal`, badges. MF shared singleton. |
-| `packages/tool-sdk` | `@platform/tool-sdk` | Generated `ToolConfig` types, `ToolApiClient`, `ToolRenderer` (config → UI), `createToolRemote()` (MF `mount`/`unmount` surface), `mountStandalone()`, and `vite/remote.mjs` host/remote Vite presets with the pinned React 18.3.1 + `@platform/ui-kit` singletons. |
-| `apps/shell` | `@platform/shell` | MF host. Mock OIDC login (seeded users, password `demo`), JWT session in `localStorage`, permission-filtered nav, `RemoteHost` with error boundary + retry fallback. |
-| `services/auth` | — | Mock OIDC: `/.well-known/openid-configuration`, `/authorize` (password-protected, one-time 5-minute codes), `/token` (password + authorization-code grants), `/userinfo`, `/users`. Issues HS256 JWTs that `platform_core.security` validates. |
-| `db/` | — | Alembic: `0001_platform_shared` (users, roles, permissions, audit_log, approval_requests in schema `platform`), then one migration per tool schema. `seed.py` is idempotent. |
-| `apps/<tool>`, `services/<tool>` | `@tools/<tool>-web` | **Tool code.** `tool.yaml` + SQLAlchemy model + optional connector + `create_tool_app(...)`. |
+### Prerequisites
 
-### Shared platform tables vs schema-per-tool
+- Docker + Docker Compose (Postgres, or the full stack)
+- Python 3.10+
+- Node 24 with `corepack` (pnpm 9.12 is pinned in `package.json`)
 
-`platform.users/roles/user_roles/role_permissions/audit_log/approval_requests` are shared;
-`audit_log` and `approval_requests` carry `tool_key` + `entity_id` so every tool writes to
-the same tables through `platform_core`. Each tool owns its own Postgres schema (`kyc`,
-`refunds`, `flags`) and migration file.
+### Environment Variables
 
-### Approval policies
+All variables have local-dev defaults; nothing needs to be set to run on `localhost`.
 
-| Tool | Action | Gate | Approval policy |
-|------|--------|------|-----------------|
-| KYC | approve / reject | `kyc:approve` | `field_true: sanctions_hit` (sanctions hits need a second approver) |
-| Refunds | approve | `refunds:approve` | `threshold: amount > 500` |
-| Flags | edit | `flags:write` | `field_true: high_risk` |
+| Variable | Description | Where to get it |
+|----------|-------------|-----------------|
+| `DATABASE_URL` | SQLAlchemy URL for Postgres | default `postgresql+psycopg2://platform:platform@localhost:5432/platform` (matches `docker-compose.yml`) |
+| `PLATFORM_JWT_SECRET` | HS256 secret shared by `services/auth` and every tool API | default dev-only value; must be set when `PLATFORM_ENV != dev` |
+| `PLATFORM_JWT_ISSUER` | Expected `iss` claim / auth service URL | default `http://localhost:8000` |
+| `PLATFORM_ENV` | `dev` (default) or anything else; non-dev refuses the default JWT secret | — |
+| `CORS_ORIGINS` | Comma-separated allowed origins for the APIs | default `*` |
+| `VITE_AUTH_URL`, `VITE_<TOOL>_API_URL`, `VITE_<TOOL>_REMOTE` | Shell build-time: auth URL, each tool's API base and `remoteEntry.js` URL | default `localhost` ports; see `apps/shell/src/registry.ts`, `apps/shell/vite.config.ts` |
+| `VITE_API_URL` | Tool remote build-time: its own API base (the shell overrides this on mount) | default `localhost:800N` |
 
-Requesters cannot approve their own requests; every request/decision/action is audited.
+### Running Locally
 
-## Running it
+Everything in Docker:
 
-### Docker Compose (everything)
-
-```sh
+```bash
 docker compose up --build
 # shell → http://localhost:3000   (APIs on 8000–8003, remotes on 3001–3003)
 ```
 
-`migrate` runs Alembic + seed once, then the four APIs and four frontends start.
+Or backend and frontend separately:
 
-### Local dev
-
-```sh
+```bash
 # backend
 make venv && make db-up && make migrate && make seed
 make api                 # auth:8000 kyc:8001 refunds:8002 flags:8003
-make test && make lint   # pytest (needs Postgres for the smoke test), ruff
 
 # frontend
-source ~/.nvm/nvm.sh; corepack enable; pnpm install
-pnpm run schema && pnpm run gen:types   # regenerate the contract after editing platform_core/config.py
-pnpm run typecheck && pnpm run build
-pnpm run preview         # shell:3000 + remotes:3001-3003 (Module Federation needs built remotes)
+corepack enable && pnpm install
+pnpm run build && pnpm run preview   # shell:3000 + remotes:3001-3003
 ```
 
-Sign in as any seeded user (password `demo`):
-
-For anything beyond local development, set `PLATFORM_ENV`, `PLATFORM_JWT_SECRET`,
-and `CORS_ORIGINS`.
+Sign in as any seeded user with password `demo`:
 
 | User | Roles | Can |
 |------|-------|-----|
@@ -111,35 +78,74 @@ and `CORS_ORIGINS`.
 | fay.flags@fintech.dev | flags_admin | edit flags |
 | vic.viewer@fintech.dev | viewer | read-only across tools |
 
-Each remote also runs standalone (`http://localhost:3001/?user=kai.lead@fintech.dev`)
-via `mountStandalone`, which is how a tool is developed without the shell.
+A tool can also run without the shell: `http://localhost:3001/?user=kai.lead@fintech.dev`.
 
-## Per-tool deploy notes
+### Running Tests
 
-Every tool is two independent deploy targets that share nothing at runtime except
-Postgres and the auth issuer:
+```bash
+make test        # pytest (smoke test needs Postgres from `make db-up`)
+make lint        # ruff
+pnpm run typecheck
+```
 
-- **API** — `Dockerfile.python` image, `uvicorn services.<tool>.app.main:app`. Env:
-  `DATABASE_URL`, `PLATFORM_JWT_SECRET`, `PLATFORM_JWT_ISSUER`, `CORS_ORIGINS`. Run its
-  own Alembic revision (`db/alembic/versions/000N_<tool>.py`) — it only touches its schema.
-- **Frontend** — `Dockerfile.web` image, `APP=@tools/<tool>-web`. The deployable
-  artifact is static `dist/` with `assets/remoteEntry.js`; host it anywhere and point the
-  shell at it via `VITE_<TOOL>_REMOTE_URL` (shell build-time env). The remote's API base is
-  `VITE_API_URL` at build time or the `apiBaseUrl` the shell passes on mount.
-- Platform packages are versioned workspace packages; a remote pins them at build time, so
-  a tool can be redeployed without rebuilding the shell and vice versa. React and
-  `@platform/ui-kit` are MF singletons with `requiredVersion` pinned in
-  `packages/tool-sdk/vite/remote.mjs`.
-- If a remote is down the shell renders a fallback card with a retry button; the other
-  tools are unaffected.
+## Architecture
 
-## Adding tool #4
+The shell is a Module Federation host that loads each tool's remote. Each remote renders its
+`tool.yaml` through `@platform/tool-sdk` and talks to its own FastAPI service, which
+`platform_core.api.create_tool_app()` generates from the same `tool.yaml`. All services share
+the `platform` schema for users, roles, permissions, audit and approvals; each tool owns its
+own schema.
 
-1. `services/<tool>/tool.yaml` — entity fields, list/detail view, actions + policies.
-2. `services/<tool>/app/models.py` — one SQLAlchemy model in schema `<tool>`;
-   `db/alembic/versions/0005_<tool>.py`.
-3. `services/<tool>/app/main.py` — `create_tool_app(config, ResourceBinding(model, connector))`.
-4. `apps/<tool>` — copy `apps/flags`, change the name/port and the `tool.yaml` import.
-5. Register in `apps/shell/src/registry.ts` + `vite.config.ts`, add compose services.
+```
+ ┌──────────────────────────────────────────────┐
+ │  Shell  (login, nav, tool registry)          │
+ └──────────┬──────────────┬──────────────┬─────┘
+            │              │              │      Module Federation remotes
+       KYC web       Refunds web      Flags web   (tool.yaml → ToolRenderer)
+            │              │              │      REST + JWT
+       KYC API       Refunds API      Flags API   (tool.yaml → create_tool_app)
+            └──────────────┼──────────────┘
+                     platform_core
+        RBAC · audit · approvals · config · connectors
+                           │
+                       Postgres
+        platform schema (users, roles, audit, approvals)
+        + one schema per tool
+```
 
-Then run `scripts/metrics.sh` and record the marginal effort in METRICS.md.
+### Key Files
+
+| Path | Purpose |
+|------|---------|
+| `platform/core/platform_core/security.py` | JWT validation, `Principal`, `require_permission` (supports `*` and `<tool>:*` wildcards) |
+| `platform/core/platform_core/approvals.py` | Approval policies (`never`/`always`/`threshold`/`field_true`), `request_approval`, `decide` |
+| `platform/core/platform_core/audit.py` | Append-only audit log with before/after diff |
+| `platform/core/platform_core/config.py` | `ToolConfig` — the Pydantic model behind `tool.yaml` |
+| `platform/core/platform_core/api.py` | `create_tool_app()` — generates a tool's FastAPI app from its config |
+| `platform/core/platform_core/connectors.py` | `Connector` interface for derived/external fields |
+| `packages/tool-sdk/` | `ToolRenderer` (config → UI), API client, `createToolRemote`, `mountStandalone`, Vite presets |
+| `packages/ui-kit/` | Shared React components (`DataTable`, `QueueView`, `DetailPane`, `ApprovalWidget`, `AuditTrail`, …) |
+| `apps/shell/` | Module Federation host, login, `registry.ts` of tools |
+| `services/auth/` | Mock OIDC issuer for local dev |
+| `services/<tool>/tool.yaml` | A tool's declarative spec |
+| `db/alembic/versions/` | `0001_platform_shared` plus one migration per tool; `db/seed.py` seeds demo users and rows |
+
+## Deployment
+
+Each tool is two independent images that share only Postgres and the auth issuer:
+
+- **API** — `Dockerfile.python`, `uvicorn services.<tool>.app.main:app`; runs its own Alembic revision.
+- **Frontend** — `Dockerfile.web` with `APP=@tools/<tool>-web`; static `dist/` with `assets/remoteEntry.js`.
+  Point the shell at it with `VITE_<TOOL>_REMOTE`.
+
+A tool can be redeployed without rebuilding the shell and vice versa; if a remote is down the
+shell shows a fallback card and the other tools keep working. Details in
+[CONTRIBUTING.md](CONTRIBUTING.md#deploying-a-tool).
+
+### Environments
+
+| Environment | URL | Notes |
+|-------------|-----|-------|
+| Local | http://localhost:3000 | `docker compose up --build`; mock auth, seeded demo data |
+
+No shared environments are deployed yet.
