@@ -20,7 +20,7 @@ api:
 	./scripts/run_services.sh
 
 schema:
-	$(PYTHON) scripts/export_config_schema.py
+	$(PYTHON) scripts/export_config_schema.py && pnpm --filter @platform/tool-sdk run gen:types
 
 test:
 	$(PYTHON) -m pytest

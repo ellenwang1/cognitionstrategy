@@ -25,7 +25,7 @@ from .audit import diff, entity_audit_trail, record_audit
 from .config import ActionSpec, ToolConfig
 from .connectors import Connector
 from .db import Base, get_db
-from .models import ApprovalRequest, AuditLog, utcnow
+from .models import AuditLog, utcnow
 from .security import Principal, assert_permission, current_principal
 
 ActionHandler = Callable[[Session, Any, Principal, dict[str, Any]], None]
