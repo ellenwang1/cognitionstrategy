@@ -1,6 +1,6 @@
 import type { ToolConfig } from "./generated/tool-config";
 
-export type Entity = Record<string, unknown> & { [key: string]: unknown };
+export type Entity = Record<string, unknown>;
 
 export interface ListResult {
   items: Entity[];
@@ -61,10 +61,6 @@ export class ToolApiClient {
     return (await res.json()) as T;
   }
 
-  config() {
-    return this.request<ToolConfig>("/config");
-  }
-
   list(q: ListQuery = {}) {
     const params = new URLSearchParams();
     if (q.page) params.set("page", String(q.page));
@@ -87,10 +83,6 @@ export class ToolApiClient {
 
   approvalsFor(id: string) {
     return this.request<Array<Record<string, unknown>>>(`${this.resourcePath}/${encodeURIComponent(id)}/approvals`);
-  }
-
-  pendingApprovals() {
-    return this.request<Array<Record<string, unknown>>>(`/approvals?status=pending`);
   }
 
   act(id: string, actionKey: string, payload: Record<string, unknown> = {}, reason = "") {

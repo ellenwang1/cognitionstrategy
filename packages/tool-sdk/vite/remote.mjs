@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import federation from "@originjs/vite-plugin-federation";
 import yaml from "@rollup/plugin-yaml";
@@ -14,6 +15,10 @@ export function sharedDeps() {
   };
 }
 
+const federationAlias = {
+  resolve: { alias: { "@originjs/vite-plugin-federation": fileURLToPath(import.meta.resolve("@originjs/vite-plugin-federation")) } },
+};
+
 /**
  * Vite config for a tool remote. Each tool exposes `./Tool` (a `ToolRemote`
  * with `mount`/`unmount`) and nothing else.
@@ -22,6 +27,7 @@ export function sharedDeps() {
  */
 export function remoteConfig({ name, port, expose = "./src/remote.tsx" }) {
   return {
+    ...federationAlias,
     plugins: [
       react(),
       yaml(),
@@ -45,6 +51,7 @@ export function remoteConfig({ name, port, expose = "./src/remote.tsx" }) {
  */
 export function hostConfig({ port, remotes }) {
   return {
+    ...federationAlias,
     plugins: [react(), federation({ name: "shell", remotes, shared: sharedDeps() })],
     server: { port, strictPort: true },
     preview: { port, strictPort: true },
