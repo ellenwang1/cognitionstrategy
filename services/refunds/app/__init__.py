@@ -1,1 +1,0 @@
-"""Refunds service application."""

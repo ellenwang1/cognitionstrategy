@@ -1,1 +1,0 @@
-"""Feature flags service application."""

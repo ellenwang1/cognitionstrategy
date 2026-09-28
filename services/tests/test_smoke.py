@@ -9,9 +9,9 @@ from fastapi.testclient import TestClient
 from platform_core.db import get_engine
 from sqlalchemy import text
 
-from services.auth.app.main import app as auth_app
-from services.kyc.app.main import app as kyc_app
-from services.refunds.app.main import app as refunds_app
+from services.auth.main import app as auth_app
+from services.kyc.main import app as kyc_app
+from services.refunds.main import app as refunds_app
 
 ROOT = Path(__file__).parents[2]
 

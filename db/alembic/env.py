@@ -8,9 +8,9 @@ from platform_core import models as platform_models  # noqa: F401
 from platform_core.db import Base
 from sqlalchemy import engine_from_config, pool
 
-from services.flags.app import models as flags_models  # noqa: F401
-from services.kyc.app import models as kyc_models  # noqa: F401
-from services.refunds.app import models as refunds_models  # noqa: F401
+from services.flags import models as flags_models  # noqa: F401
+from services.kyc import models as kyc_models  # noqa: F401
+from services.refunds import models as refunds_models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
