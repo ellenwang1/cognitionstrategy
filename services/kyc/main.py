@@ -6,7 +6,7 @@ from platform_core.config import load_tool_config
 from .connector import SanctionsConnector, enrich_kyc
 from .models import KycCase
 
-config = load_tool_config(Path(__file__).parents[1] / "tool.yaml")
+config = load_tool_config(Path(__file__).parent / "tool.yaml")
 app = create_tool_app(
     config,
     ResourceBinding(model=KycCase, enrich=enrich_kyc, connectors=[SanctionsConnector()]),

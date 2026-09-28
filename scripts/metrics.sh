@@ -13,7 +13,7 @@ tracked() { git ls-files -- "$@" | grep -E "$SRC_GLOB" | grep -Ev "$EXCLUDE" || 
 loc()     { local files; files=$(tracked "$@"); [ -n "$files" ] && echo "$files" | xargs cat | wc -l || echo 0; }
 nfiles()  { tracked "$@" | wc -l; }
 
-PLATFORM_PATHS=(packages platform db/alembic/versions/0001_platform_shared.py db/alembic/env.py db/alembic.ini db/alembic/script.py.mako services/auth apps/shell scripts Dockerfile.python docker-compose.yml Makefile turbo.json package.json pnpm-workspace.yaml tsconfig.base.json requirements-dev.txt ruff.toml)
+PLATFORM_PATHS=(packages db/alembic/versions/0001_platform_shared.py db/alembic/env.py db/alembic.ini db/alembic/script.py.mako services/auth apps/shell scripts Dockerfile.python docker-compose.yml Makefile turbo.json package.json pnpm-workspace.yaml tsconfig.base.json requirements-dev.txt ruff.toml)
 tool_paths() { echo "apps/$1 services/$1 db/alembic/versions/*_$1.py"; }
 
 P_LOC=$(loc "${PLATFORM_PATHS[@]}"); P_FILES=$(nfiles "${PLATFORM_PATHS[@]}")
