@@ -58,7 +58,7 @@ def test_default_jwt_secret_rejected_outside_dev(monkeypatch: pytest.MonkeyPatch
 
 @pytest.mark.parametrize("service", ["kyc", "refunds", "flags"])
 def test_tool_config_validates(service: str) -> None:
-    path = Path(__file__).parents[3] / "services" / service / "tool.yaml"
+    path = Path(__file__).parents[1] / "services" / service / "tool.yaml"
     config = load_tool_config(path)
     assert config.key == service
     assert config.entity.fields
