@@ -389,8 +389,7 @@ def build_resource_router(config: ToolConfig, binding: ResourceBinding) -> APIRo
     return router
 
 
-def create_tool_app(config: ToolConfig, binding: ResourceBinding) -> FastAPI:
-    app = FastAPI(title=config.name, version="0.1.0")
+def add_cors(app: FastAPI) -> None:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
@@ -398,6 +397,11 @@ def create_tool_app(config: ToolConfig, binding: ResourceBinding) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+
+def create_tool_app(config: ToolConfig, binding: ResourceBinding) -> FastAPI:
+    app = FastAPI(title=config.name, version="0.1.0")
+    add_cors(app)
 
     @app.get("/healthz")
     def healthz() -> dict[str, Any]:
