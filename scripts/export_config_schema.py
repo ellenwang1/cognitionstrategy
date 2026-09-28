@@ -7,13 +7,11 @@ Writes packages/tool-sdk/schema/tool-config.schema.json
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "platform" / "core"))
+from platform_core.config import tool_config_json_schema
 
-from platform_core.config import tool_config_json_schema  # noqa: E402
+ROOT = Path(__file__).resolve().parents[1]
 
 OUT = ROOT / "packages" / "tool-sdk" / "schema" / "tool-config.schema.json"
 

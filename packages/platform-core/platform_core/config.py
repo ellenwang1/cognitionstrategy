@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class FieldType(str, Enum):
@@ -138,6 +138,36 @@ class ToolConfig(BaseModel):
     detail_view: DetailViewSpec = Field(alias="detailView")
     actions: list[ActionSpec] = Field(default_factory=list)
     api: ApiSpec
+
+    @model_validator(mode="after")
+    def check_field_references(self) -> ToolConfig:
+        names = {f.name for f in self.entity.fields}
+        errors: list[str] = []
+
+        def check(where: str, name: str) -> None:
+            if name not in names:
+                errors.append(f'{where}: unknown field "{name}"')
+
+        for column in self.list_view.columns:
+            check("listView.columns", column)
+        for spec in self.list_view.filters:
+            check("listView.filters", spec.field)
+        if self.list_view.default_sort is not None:
+            check("listView.defaultSort", self.list_view.default_sort.field)
+        for section in self.detail_view.sections:
+            for name in section.fields:
+                check(f"detailView.{section.title}", name)
+        for action in self.actions:
+            for name in action.fields:
+                check(f"actions.{action.key}.fields", name)
+            if action.approval.field:
+                check(f"actions.{action.key}.approval", action.approval.field)
+        if self.entity.status_field:
+            check("entity.statusField", self.entity.status_field)
+        check("entity.titleField", self.entity.title_field)
+        if errors:
+            raise ValueError("; ".join(errors))
+        return self
 
     def field(self, name: str) -> EntityField | None:
         return next((f for f in self.entity.fields if f.name == name), None)

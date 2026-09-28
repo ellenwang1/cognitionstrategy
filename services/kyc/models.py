@@ -1,22 +1,18 @@
 from __future__ import annotations
 
-import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from platform_core.db import Base
+from platform_core.models import new_id, utcnow
 from sqlalchemy import DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
-
-
-def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 class KycCase(Base):
     __tablename__ = "kyc_cases"
     __table_args__ = {"schema": "kyc"}
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     applicant_name: Mapped[str] = mapped_column(String(255))
     applicant_email: Mapped[str] = mapped_column(String(255))
     country: Mapped[str] = mapped_column(String(2))

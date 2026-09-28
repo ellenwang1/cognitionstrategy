@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import PLATFORM_SCHEMA, Base
 
 
-def _uuid() -> str:
+def new_id() -> str:
     return str(uuid.uuid4())
 
 
@@ -24,7 +24,7 @@ class User(Base):
     __tablename__ = "users"
     __table_args__ = {"schema": PLATFORM_SCHEMA}
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     email: Mapped[str] = mapped_column(String(255), unique=True)
     name: Mapped[str] = mapped_column(String(255))
     password: Mapped[str] = mapped_column(String(255), default="demo")
@@ -105,7 +105,7 @@ class ApprovalRequest(Base):
         {"schema": PLATFORM_SCHEMA},
     )
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     tool: Mapped[str] = mapped_column(String(64))

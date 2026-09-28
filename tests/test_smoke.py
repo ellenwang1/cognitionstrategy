@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -9,11 +10,11 @@ from fastapi.testclient import TestClient
 from platform_core.db import get_engine
 from sqlalchemy import text
 
-from services.auth.app.main import app as auth_app
-from services.kyc.app.main import app as kyc_app
-from services.refunds.app.main import app as refunds_app
+from services.auth.main import app as auth_app
+from services.kyc.main import app as kyc_app
+from services.refunds.main import app as refunds_app
 
-ROOT = Path(__file__).parents[2]
+ROOT = Path(__file__).parents[1]
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -23,9 +24,9 @@ def database() -> None:
             connection.execute(text("select 1"))
     except Exception as exc:
         pytest.skip(f"Postgres unavailable: {exc}")
-    subprocess.run([str(ROOT / ".venv/bin/alembic"), "upgrade", "head"], cwd=ROOT / "db", check=True)
+    subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], cwd=ROOT / "db", check=True)
     subprocess.run(
-        [str(ROOT / ".venv/bin/python"), "seed.py"],
+        [sys.executable, "seed.py"],
         cwd=ROOT / "db",
         check=True,
         env={**os.environ, "PYTHONPATH": str(ROOT)},

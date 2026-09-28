@@ -1,28 +1,22 @@
 from __future__ import annotations
 
 import json
-import os
 import secrets
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from platform_core.api import add_cors
 from platform_core.db import get_db
 from platform_core.models import RolePermission, User
-from platform_core.security import Principal, current_principal, issue_token
+from platform_core.security import Principal, current_principal, issue_token, jwt_issuer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 app = FastAPI(title="Mock OIDC Identity Service", version="0.1.0")
 authorization_codes: dict[str, tuple[str, datetime]] = {}
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+add_cors(app)
 
 
 def principal_for_user(db: Session, user: User) -> Principal:
@@ -41,7 +35,7 @@ def principal_for_user(db: Session, user: User) -> Principal:
 
 @app.get("/.well-known/openid-configuration")
 def openid_configuration() -> dict[str, object]:
-    issuer = os.environ.get("PLATFORM_JWT_ISSUER", "http://localhost:8000")
+    issuer = jwt_issuer()
     return {
         "issuer": issuer,
         "token_endpoint": f"{issuer}/token",
@@ -131,8 +125,6 @@ def authorize(
     existing = dict(parse_qsl(parsed.query))
     existing.update(query)
     location = urlunparse(parsed._replace(query=urlencode(existing)))
-    from fastapi.responses import RedirectResponse
-
     return RedirectResponse(url=location, status_code=302)
 
 

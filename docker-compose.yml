@@ -36,7 +36,7 @@ services:
       PLATFORM_JWT_SECRET: dev-only-not-a-real-secret
       PLATFORM_JWT_ISSUER: http://localhost:8000
       CORS_ORIGINS: "*"
-    command: uvicorn services.auth.app.main:app --host 0.0.0.0 --port 8000
+    command: uvicorn services.auth.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
     depends_on:
@@ -48,7 +48,7 @@ services:
       context: .
       dockerfile: Dockerfile.python
     environment: *platform-env
-    command: uvicorn services.kyc.app.main:app --host 0.0.0.0 --port 8001
+    command: uvicorn services.kyc.main:app --host 0.0.0.0 --port 8001
     ports:
       - "8001:8001"
     depends_on:
@@ -60,7 +60,7 @@ services:
       context: .
       dockerfile: Dockerfile.python
     environment: *platform-env
-    command: uvicorn services.refunds.app.main:app --host 0.0.0.0 --port 8002
+    command: uvicorn services.refunds.main:app --host 0.0.0.0 --port 8002
     ports:
       - "8002:8002"
     depends_on:
@@ -72,7 +72,7 @@ services:
       context: .
       dockerfile: Dockerfile.python
     environment: *platform-env
-    command: uvicorn services.flags.app.main:app --host 0.0.0.0 --port 8003
+    command: uvicorn services.flags.main:app --host 0.0.0.0 --port 8003
     ports:
       - "8003:8003"
     depends_on:

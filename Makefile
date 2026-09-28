@@ -1,5 +1,6 @@
-PYTHON ?= .venv/bin/python
-ALEMBIC ?= .venv/bin/alembic
+VENV ?= .venv
+PYTHON ?= $(VENV)/bin/python
+ALEMBIC ?= $(VENV)/bin/alembic
 
 .PHONY: venv db-up migrate seed api schema test lint
 
@@ -20,10 +21,10 @@ api:
 	./scripts/run_services.sh
 
 schema:
-	$(PYTHON) scripts/export_config_schema.py
+	$(PYTHON) scripts/export_config_schema.py && pnpm --filter @platform/tool-sdk run gen:types
 
 test:
 	$(PYTHON) -m pytest
 
 lint:
-	$(PYTHON) -m ruff check platform services db
+	$(PYTHON) -m ruff check packages/platform-core services db tests

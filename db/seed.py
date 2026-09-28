@@ -7,9 +7,9 @@ from platform_core.db import get_session_factory
 from platform_core.models import Role, RolePermission, User, UserRole
 from sqlalchemy import select
 
-from services.flags.app.models import FeatureFlag
-from services.kyc.app.models import KycCase
-from services.refunds.app.models import RefundRequest
+from services.flags.models import FeatureFlag
+from services.kyc.models import KycCase
+from services.refunds.models import RefundRequest
 
 ROLES = {
     "admin": ["*"],

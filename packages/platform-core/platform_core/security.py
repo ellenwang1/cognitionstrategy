@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 JWT_ALGORITHM = "HS256"
@@ -87,20 +87,6 @@ def current_principal(request: Request) -> Principal:
             status_code=status.HTTP_401_UNAUTHORIZED, detail="missing bearer token"
         )
     return decode_token(header.split(" ", 1)[1].strip())
-
-
-def require_permission(permission: str):
-    """FastAPI dependency factory gating a route on a single permission."""
-
-    def dependency(principal: Principal = Depends(current_principal)) -> Principal:
-        if not principal.has_permission(permission):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"missing permission: {permission}",
-            )
-        return principal
-
-    return dependency
 
 
 def assert_permission(principal: Principal, permission: str) -> None:

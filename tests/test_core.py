@@ -2,8 +2,9 @@ from pathlib import Path
 
 import pytest
 from platform_core.approvals import approval_required
-from platform_core.config import ApprovalPolicy, load_tool_config
+from platform_core.config import ApprovalPolicy, ToolConfig, load_tool_config
 from platform_core.security import Principal, decode_token, issue_token
+from pydantic import ValidationError
 
 
 def test_principal_permission_wildcards() -> None:
@@ -58,7 +59,15 @@ def test_default_jwt_secret_rejected_outside_dev(monkeypatch: pytest.MonkeyPatch
 
 @pytest.mark.parametrize("service", ["kyc", "refunds", "flags"])
 def test_tool_config_validates(service: str) -> None:
-    path = Path(__file__).parents[3] / "services" / service / "tool.yaml"
+    path = Path(__file__).parents[1] / "services" / service / "tool.yaml"
     config = load_tool_config(path)
     assert config.key == service
     assert config.entity.fields
+
+
+def test_tool_config_rejects_unknown_field_reference() -> None:
+    path = Path(__file__).parents[1] / "services" / "kyc" / "tool.yaml"
+    data = load_tool_config(path).model_dump(by_alias=True)
+    data["listView"]["columns"].append("nonexistent_field")
+    with pytest.raises(ValidationError, match='listView.columns: unknown field "nonexistent_field"'):
+        ToolConfig.model_validate(data)

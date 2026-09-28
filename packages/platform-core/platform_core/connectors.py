@@ -1,8 +1,8 @@
 """Connector abstraction over data sources.
 
 Tools never talk to an external system directly: they declare a connector and
-call ``fetch``/``fetch_one``. Postgres has a real implementation; everything
-external (payments processor, sanctions vendor, ...) is a deterministic mock.
+call ``fetch``/``fetch_one``. Everything external (payments processor,
+sanctions vendor, ...) is a deterministic mock.
 """
 
 from __future__ import annotations
@@ -10,9 +10,6 @@ from __future__ import annotations
 import hashlib
 from abc import ABC, abstractmethod
 from typing import Any
-
-from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 
 class ConnectorError(RuntimeError):
@@ -37,25 +34,6 @@ class Connector(ABC):
 
     def health(self) -> dict[str, Any]:
         return {"connector": self.name, "kind": self.kind, "status": "ok"}
-
-
-class PostgresConnector(Connector):
-    """Real connector backed by the shared Postgres cluster."""
-
-    kind = "postgres"
-
-    def __init__(self, name: str, session: Session) -> None:
-        super().__init__(name)
-        self.session = session
-
-    def fetch(self, resource: str, **params: Any) -> list[dict[str, Any]]:
-        """``resource`` is a SQL statement with bound parameters."""
-        rows = self.session.execute(text(resource), params).mappings().all()
-        return [dict(row) for row in rows]
-
-    def health(self) -> dict[str, Any]:
-        self.session.execute(text("select 1"))
-        return super().health()
 
 
 class MockConnector(Connector):

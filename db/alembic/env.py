@@ -1,28 +1,21 @@
 from __future__ import annotations
 
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from platform_core import models as platform_models  # noqa: F401
-from platform_core.db import Base
+from platform_core.db import Base, database_url
 from sqlalchemy import engine_from_config, pool
 
-from services.flags.app import models as flags_models  # noqa: F401
-from services.kyc.app import models as kyc_models  # noqa: F401
-from services.refunds.app import models as refunds_models  # noqa: F401
+from services.flags import models as flags_models  # noqa: F401
+from services.kyc import models as kyc_models  # noqa: F401
+from services.refunds import models as refunds_models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option(
-    "sqlalchemy.url",
-    os.environ.get(
-        "DATABASE_URL",
-        "postgresql+psycopg2://platform:platform@localhost:5432/platform",
-    ),
-)
+config.set_main_option("sqlalchemy.url", database_url())
 target_metadata = Base.metadata
 
 
