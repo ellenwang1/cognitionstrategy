@@ -1,5 +1,6 @@
-PYTHON ?= .venv/bin/python
-ALEMBIC ?= .venv/bin/alembic
+VENV ?= .venv
+PYTHON ?= $(VENV)/bin/python
+ALEMBIC ?= $(VENV)/bin/alembic
 
 .PHONY: venv db-up migrate seed api schema test lint
 
