@@ -107,13 +107,11 @@ class ResourceService:
             if filters.get(spec.field) not in (None, "")
         ]
 
-        for spec in self.config.list_view.filters:
-            value = filters.get(spec.field)
-            if value in (None, ""):
-                continue
+        for spec in filter_specs:
             column = columns.get(spec.field)
             if column is None:
                 continue
+            value = filters[spec.field]
             if spec.kind == "boolean":
                 stmt = stmt.where(column.is_(value.lower() in ("1", "true", "yes")))
             elif spec.kind == "select":
@@ -190,16 +188,6 @@ class ResourceService:
         start = (page - 1) * page_size
         rows = rows[start : start + page_size]
         return rows, total, {id(obj): serialized[id(obj)] for obj in rows}
-
-    def list(
-        self, db: Session, *, filters: dict[str, str], search: str | None,
-        sort: str | None, direction: str, page: int, page_size: int,
-    ) -> tuple[list[Base], int]:
-        rows, total, _ = self._list(
-            db, filters=filters, search=search, sort=sort,
-            direction=direction, page=page, page_size=page_size,
-        )
-        return rows, total
 
     def list_serialized(
         self, db: Session, *, filters: dict[str, str], search: str | None,
@@ -401,12 +389,7 @@ def build_resource_router(config: ToolConfig, binding: ResourceBinding) -> APIRo
     return router
 
 
-def create_tool_app(
-    config: ToolConfig,
-    binding: ResourceBinding,
-    *,
-    extra_routers: list[APIRouter] | None = None,
-) -> FastAPI:
+def create_tool_app(config: ToolConfig, binding: ResourceBinding) -> FastAPI:
     app = FastAPI(title=config.name, version="0.1.0")
     app.add_middleware(
         CORSMiddleware,
@@ -433,19 +416,4 @@ def create_tool_app(
         return principal
 
     app.include_router(build_resource_router(config, binding))
-    for router in extra_routers or []:
-        app.include_router(router)
     return app
-
-
-__all__ = [
-    "ActionHandler",
-    "ActionRequest",
-    "ApprovalRequest",
-    "DecisionRequest",
-    "ResourceBinding",
-    "ResourceService",
-    "build_resource_router",
-    "create_tool_app",
-    "serialize_model",
-]
