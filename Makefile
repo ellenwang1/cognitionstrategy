@@ -26,4 +26,4 @@ test:
 	$(PYTHON) -m pytest
 
 lint:
-	$(PYTHON) -m ruff check platform services db
+	$(PYTHON) -m ruff check packages/platform-core services db
