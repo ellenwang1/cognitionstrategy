@@ -97,22 +97,20 @@ the `platform` schema for users, roles, permissions, audit and approvals; each t
 own schema.
 
 ```
-                       browser
-                          │
-   ┌──────────────────────┴────────────────────────┐
-   │ apps/shell  (Module Federation host, :3000)   │  login, nav, tool registry,
-   │   loads  kyc/Tool  refunds/Tool  flags/Tool   │  fallback UI when a remote fails
-   └───────┬───────────────┬───────────────┬───────┘
-           │ remoteEntry   │               │
-   apps/kyc :3001   apps/refunds :3002   apps/flags :3003     ← each = tool.yaml + a few lines
-           └──────── @platform/tool-sdk  ──────────┘           (shared singletons: react,
-                          @platform/ui-kit                      react-dom, @platform/ui-kit)
-                          │  REST + Bearer JWT
-   services/kyc :8001   services/refunds :8002   services/flags :8003   services/auth :8000
-           └──────── platform/core (platform_core) ─────────┘
-              RBAC · audit · approvals · config loader · connectors · generated CRUD/action API
-                          │
-                    Postgres  (schemas: platform, kyc, refunds, flags)
+ ┌──────────────────────────────────────────────┐
+ │  Shell  (login, nav, tool registry)          │
+ └──────────┬──────────────┬──────────────┬─────┘
+            │              │              │      Module Federation remotes
+       KYC web       Refunds web      Flags web   (tool.yaml → ToolRenderer)
+            │              │              │      REST + JWT
+       KYC API       Refunds API      Flags API   (tool.yaml → create_tool_app)
+            └──────────────┼──────────────┘
+                     platform_core
+        RBAC · audit · approvals · config · connectors
+                           │
+                       Postgres
+        platform schema (users, roles, audit, approvals)
+        + one schema per tool
 ```
 
 ### Key Files
