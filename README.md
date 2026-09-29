@@ -1,4 +1,4 @@
-# Internal tools platform
+# Fintech Platforms
 
 Internal tools (review queues, admin dashboards) all need the same governance: who can see
 what, who can act, who signs off, and a record of what happened. This repo builds that once.

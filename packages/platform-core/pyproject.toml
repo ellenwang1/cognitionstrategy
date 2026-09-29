@@ -1,7 +1,7 @@
 [project]
 name = "platform-core"
 version = "0.1.0"
-description = "Shared platform primitives (RBAC, audit, approvals, config, connectors) for internal tools"
+description = "Fintech Platforms core: shared primitives (RBAC, audit, approvals, config, connectors) for internal tools"
 requires-python = ">=3.10"
 dependencies = [
   "fastapi>=0.115,<0.120",
