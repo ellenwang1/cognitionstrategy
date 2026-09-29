@@ -5,7 +5,7 @@ Read this before changing code. The [README](README.md) covers running the stack
 
 ## What this is
 
-A config-driven platform for internal tools. Each tool is a `services/<tool>/tool.yaml`.
+Fintech Platforms: a config-driven platform for internal tools. Each tool is a `services/<tool>/tool.yaml`.
 The Python side (`packages/platform-core`) turns it into a FastAPI app; the TypeScript side
 (`packages/tool-sdk`) turns it into a React UI loaded by the `apps/shell` Module Federation
 host. Permissions, audit and approvals live in the platform, not in tools.

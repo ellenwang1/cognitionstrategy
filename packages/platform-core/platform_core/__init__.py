@@ -1,1 +1,1 @@
-"""platform-core: shared primitives for config-driven internal tools."""
+"""platform-core: Fintech Platforms shared primitives for config-driven internal tools."""

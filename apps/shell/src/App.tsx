@@ -55,7 +55,7 @@ function Brand({ onLight = false }: { onLight?: boolean }) {
         <ShieldCheckIcon className="h-4 w-4" />
       </span>
       <span className="leading-tight">
-        <span className={onLight ? "block text-sm font-semibold text-foreground" : "block text-sm font-semibold text-white"}>Internal Tools</span>
+        <span className={onLight ? "block text-sm font-semibold text-foreground" : "block text-sm font-semibold text-white"}>Fintech Platforms</span>
         <span className={onLight ? "block text-[11px] text-muted-foreground" : "block text-[11px] text-sidebar-muted"}>Operations console</span>
       </span>
     </a>

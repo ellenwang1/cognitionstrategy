@@ -1,1 +1,1 @@
-"""Backend services for the internal-tools platform."""
+"""Backend services for Fintech Platforms."""
