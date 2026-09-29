@@ -22,15 +22,15 @@ Or backend and frontend separately:
 
 ```sh
 make venv && make db-up && make migrate && make seed
-make api                      # auth:8000 kyc:8001 refunds:8002 flags:8003
+make api                      # auth + the three tool APIs
 
 corepack enable && pnpm install
-pnpm run build && pnpm run preview   # shell:3000, remotes:3001-3003
+pnpm run build && pnpm run preview   # shell + the three tool remotes
 ```
 
 Module Federation loads built remotes, so use `build && preview` rather than `pnpm run dev`
-when going through the shell. A remote also runs on its own:
-`http://localhost:3001/?user=kai.lead@fintech.dev`.
+when going through the shell. A remote also runs on its own by opening its URL (see
+`docker-compose.yml` for ports) with `?user=<email>`.
 
 Sign in as any seeded user with password `demo`. `admin@fintech.dev` can do everything;
 `ana.analyst@fintech.dev` can review KYC cases but not approve them; `kai.lead@fintech.dev`
