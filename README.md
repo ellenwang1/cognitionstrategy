@@ -12,6 +12,19 @@ Each is a `tool.yaml`, one SQLAlchemy model, one migration and a few lines of gl
 
 ## Run it
 
+Install Docker (Compose is included) if you don't have it:
+
+```sh
+# macOS
+brew install --cask docker && open -a Docker
+
+# Windows (PowerShell; needs WSL 2, run `wsl --install` first if missing)
+winget install -e --id Docker.DockerDesktop
+
+# Ubuntu
+curl -fsSL https://get.docker.com | sh && sudo usermod -aG docker $USER   # then log out and back in
+```
+
 Everything in Docker:
 
 ```sh
